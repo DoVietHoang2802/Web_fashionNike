@@ -1,0 +1,76 @@
+@{
+    ViewData["Title"] = "Đăng ký";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+}
+<div class="container py-5 mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+            <div class="p-4 border-nike bg-white">
+                <div class="text-center mb-5">
+                    <h2 class="fw-black text-uppercase">TRỞ THÀNH THÀNH VIÊN</h2>
+                    <p class="text-nike-gray small">Tạo hồ sơ Nike của bạn và nhận được quyền truy cập sớm nhất vào các sản phẩm tốt nhất.</p>
+                </div>
+
+                <form asp-action="Register" method="post">
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-uppercase">Họ tên</label>
+                        <input type="text" name="fullName" class="form-control border-nike rounded-0 py-3 px-3"
+                               placeholder="Họ và tên của bạn" autofocus>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-uppercase">Email <span class="text-danger">*</span></label>
+                        <input type="email" name="email" class="form-control border-nike rounded-0 py-3 px-3"
+                               placeholder="Địa chỉ Email" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-uppercase">Mật khẩu <span class="text-danger">*</span></label>
+                        <input type="password" name="password" class="form-control border-nike rounded-0 py-3 px-3"
+                               placeholder="Mật khẩu (tối thiểu 6 ký tự)" required minlength="6">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-uppercase">Xác nhận mật khẩu <span class="text-danger">*</span></label>
+                        <input type="password" name="confirmPassword" class="form-control border-nike rounded-0 py-3 px-3"
+                               placeholder="Nhập lại mật khẩu" required>
+                    </div>
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-dark border-0 rounded-0 small mb-4 py-2">
+                            @foreach (var modelError in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <div class="fw-bold">@modelError.ErrorMessage</div>
+                            }
+                        </div>
+                    }
+
+                    <div class="mb-4 text-center">
+                        <p class="text-nike-gray extra-small text-uppercase">
+                            Bằng cách tạo tài khoản, bạn đồng ý với <a href="#" class="text-nike-black fw-bold">Chính sách bảo mật</a> và <a href="#" class="text-nike-black fw-bold">Điều khoản sử dụng</a> của Nike.
+                        </p>
+                    </div>
+
+                    <button type="submit" class="btn-nike w-100 py-3 text-uppercase fw-black mb-4">
+                        Tham gia ngay
+                    </button>
+
+                    <div class="text-center border-top pt-4">
+                        <span class="text-nike-gray small">Đã có tài khoản?</span>
+                        <a asp-action="Login" asp-route-returnUrl="@returnUrl" class="text-nike-black fw-bold text-decoration-none small ms-1 text-uppercase">
+                            Đăng nhập
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black { font-weight: 900 !important; }
+    .extra-small { font-size: 0.7rem; }
+</style>

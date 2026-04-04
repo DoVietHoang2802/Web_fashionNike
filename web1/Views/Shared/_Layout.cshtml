@@ -1,0 +1,211 @@
+@using Microsoft.AspNetCore.Http
+@inject web1.Models.CategoryService CategoryService
+@inject Microsoft.AspNetCore.Identity.UserManager<web1.Models.ApplicationUser> UserManager
+@{
+    var navCategories = await CategoryService.GetActiveCategoriesAsync();
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Fashion Store</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/modern-ui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/web1.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <style>
+        body { max-width: 80%; margin: 0 auto; display: block; }
+        .container { max-width: 80% !important; }
+        .container-fluid { max-width: 80% !important; margin: 0 auto; }
+        .nike-nav .container { max-width: 80% !important; }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg nike-nav sticky-top">
+            <div class="container container-nike">
+                <a class="navbar-brand animate__animated animate__fadeIn" asp-controller="Home" asp-action="Index">
+                    NIKE STORE
+                </a>
+
+                <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav mx-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Trang chủ</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Products" asp-action="Index">Sản phẩm</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                Danh mục
+                            </a>
+                            <ul class="dropdown-menu border-nike shadow-sm rounded-0">
+                                @foreach (var cat in navCategories)
+                                {
+                                    <li><a class="dropdown-item py-2 px-3 fw-medium" asp-controller="Products" asp-action="Index" asp-route-categoryId="@cat.Id">@cat.Name</a></li>
+                                }
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <ul class="navbar-nav align-items-center">
+                        <li class="nav-item me-3">
+                            <a class="nav-link p-0 position-relative" asp-controller="Cart" asp-action="Index">
+                                <i class="fas fa-shopping-bag fs-5"></i>
+                                @{
+                                    var rawCart = Context.Session.GetString("Cart");
+                                    int cartBadgeCount = 0;
+                                    if (!string.IsNullOrEmpty(rawCart))
+                                    {
+                                        try
+                                        {
+                                            var cartItems = System.Text.Json.JsonSerializer.Deserialize<List<web1.Models.CartItem>>(rawCart);
+                                            cartBadgeCount = cartItems?.Sum(x => x.Quantity) ?? 0;
+                                        }
+                                        catch { cartBadgeCount = 0; }
+                                    }
+                                }
+                                <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark border border-white @(cartBadgeCount > 0 ? "" : "d-none")">
+                                    @cartBadgeCount
+                                </span>
+                            </a>
+                        </li>
+
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            var navbarUser = await UserManager.GetUserAsync(User);
+                            var navbarAvatar = navbarUser?.AvatarUrl;
+                            var navbarName = navbarUser?.FullName ?? navbarUser?.UserName ?? User.Identity?.Name;
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 p-0" href="#" role="button" data-bs-toggle="dropdown">
+                                    @if (!string.IsNullOrEmpty(navbarAvatar))
+                                    {
+                                        <img src="@navbarAvatar" alt="Avatar"
+                                             style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.15);">
+                                    }
+                                    else
+                                    {
+                                        <div style="width:32px;height:32px;background:#f5f5f5;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #e5e5e5;">
+                                            <i class="fas fa-user" style="color:#999;font-size:0.85rem;"></i>
+                                        </div>
+                                    }
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end border-nike shadow-lg p-2 rounded-0 mt-2" style="min-width:200px;">
+                                    <li class="px-3 py-2 border-bottom mb-2">
+                                        <div class="small text-muted">Xin chào,</div>
+                                        <div class="fw-bold text-truncate" style="max-width:150px;">@navbarName</div>
+                                    </li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Account" asp-action="Profile"><i class="fas fa-user me-2 text-muted"></i>Cá nhân</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Wishlist" asp-action="Index"><i class="far fa-heart me-2 text-danger"></i>Yêu thích</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Order" asp-action="MyOrders"><i class="fas fa-box me-2 text-muted"></i>Đơn hàng</a></li>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item py-2 text-primary fw-bold" asp-controller="Admin" asp-action="Index"><i class="fas fa-gear me-2"></i>Quản trị</a></li>
+                                    }
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="dropdown-item py-2 text-danger"><i class="fas fa-right-from-bracket me-2"></i>Đăng xuất</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="btn-nike py-2 px-4 shadow-none" asp-controller="Account" asp-action="Login">
+                                    Đăng nhập
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        @if (TempData["Message"] != null)
+        {
+            <div class="alert alert-dark border-0 rounded-0 m-0 text-center py-2 fade show" role="alert">
+                <span class="small fw-bold">@TempData["Message"]</span>
+            </div>
+        }
+        @RenderBody()
+    </main>
+
+    <footer class="nike-footer">
+        <div class="container">
+            <div class="row g-5">
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase fw-bold mb-4 font-heading">Tìm cửa hàng</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#">Trở thành thành viên</a></li>
+                        <li><a href="#">Phản hồi khách hàng</a></li>
+                        <li><a href="#">Mã giảm giá</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase fw-bold mb-4 font-heading">Trợ giúp</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#">Trình trạng đơn hàng</a></li>
+                        <li><a href="#">Vận chuyển & Giao hàng</a></li>
+                        <li><a href="#">Hình thức thanh toán</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase fw-bold mb-4 font-heading">Về Nike Store</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#">Tin tức</a></li>
+                        <li><a href="#">Việc làm</a></li>
+                        <li><a href="#">Phát triển bền vững</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="d-flex gap-3 fs-5 justify-content-lg-end">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-5 border-secondary opacity-25">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="fw-bold"><i class="fas fa-map-marker-alt me-2"></i>Việt Nam</span>
+                    <span class="text-secondary small">&copy; @DateTime.Now.Year Nike Store. All Rights Reserved.</span>
+                </div>
+                <div class="d-flex gap-4 small text-secondary">
+                    <a href="#">Hướng dẫn</a>
+                    <a href="#">Điều khoản sử dụng</a>
+                    <a href="#">Chính sách bảo mật</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Quick View Modal -->
+    <div class="modal fade" id="quickViewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" id="quickViewContent">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

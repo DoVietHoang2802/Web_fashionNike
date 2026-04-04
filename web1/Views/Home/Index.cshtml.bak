@@ -1,0 +1,97 @@
+@model IEnumerable<web1.Models.Product>
+@{
+    ViewData["Title"] = "Trang chủ";
+}
+
+<!-- Nike Hero Section -->
+<section class="hero-nike animate__animated animate__fadeIn">
+    <div class="container py-3">
+        <div class="row align-items-center">
+            <div class="col-lg-6 text-lg-start text-center mb-5 mb-lg-0">
+                <h1 class="fw-black mb-3 text-uppercase" style="font-size: clamp(2.5rem, 8vw, 4rem); line-height: 0.9;">JUST<br>DO IT</h1>
+                <p class="fw-medium mb-4 text-nike-gray" style="font-size: 1.1rem; letter-spacing: -0.01em;">Phá bỏ giới hạn. Khám phá phong cách của riêng bạn.</p>
+                <div class="d-flex flex-column flex-md-row gap-2 justify-content-center justify-content-lg-start">
+                    <a asp-controller="Products" asp-action="Index" class="btn-nike px-4 py-2">Mua sắm ngay</a>
+                    <a href="#featured" class="btn-nike-outline px-4 py-2">Khám phá thêm</a>
+                </div>
+            </div>
+            <div class="col-lg-6 px-lg-5">
+                 <div class="hero-image-wrapper position-relative">
+                    <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800" class="img-fluid rounded-0 shadow-none" alt="Nike Brand Image">
+                    <div class="position-absolute bottom-0 start-0 p-4 bg-white m-4 d-none d-md-block border-nike">
+                        <span class="fw-bold d-block">NIKE AIR MAX</span>
+                        <span class="text-nike-gray small">Biểu tượng của sự thoải mái</span>
+                    </div>
+                 </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section id="featured" class="py-3">
+    <div class="container">
+        <div class="mb-4">
+            <h2 class="nike-section-title mb-0">Sản phẩm mới</h2>
+        </div>
+
+        <div class="row g-4">
+            @foreach (var product in Model)
+            {
+                <div class="col-lg-4 col-md-6 col-sm-6">
+                    <div class="nike-product-card h-100 d-flex flex-column" onclick="location.href='@Url.Action("Details", "Products", new { id = product.Id })'">
+                        <div class="nike-product-image-container">
+                            <img src="@product.ImageUrl" class="nike-product-image" alt="@product.Name" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNGMUY1RjkiLz48cGF0aCBkPSJNMjUwIDIzMEMyNjEuMDQ2IDIzMCAyNzAgMjIxLjA0NiAyNzAgMjEwQzI3MCAxOTguOTU0IDI2MS4wNDYgMTkwIDI1MCAxOTBDMjM4Ljk1NCAxOTAgMjMwIDE5OC45NTQgMjMwIDIxMEMyMzAgMjIxLjA0NiAyMzguOTU0IDIzMCAyNTAgMjMwWiIgZmlsbD0iIzk0QTMzOCIvPjxwYXRoIGQ9Ik0zMDUgMzEwQzMwNSAyNzkuNjI0IDI4MC4zNzYgMjU1IDI1MCAyNTVDMjE5LjYyNCAyNTUgMTk1IDI3OS42MjQgMTk1IDMxMEgzMDVaIiBmaWxsPSIjOTRBMzM4Ii8+PC9zdmc+'">
+                            <button class="nike-quick-add" onclick="event.stopPropagation(); addToCart(@product.Id)">
+                                Thêm vào giỏ hàng
+                            </button>
+                        </div>
+                        <div class="nike-product-info flex-grow-1">
+                            <div class="nike-product-name">@product.Name</div>
+                            <div class="nike-product-category">@(product.Category?.Name ?? "Phong cách sống")</div>
+
+                            <div class="nike-card-rating">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <i class="fas fa-star @(i <= (int)Math.Round((double)(product.Rating ?? 0)) ? "text-nike-black" : "text-nike-gray opacity-25")"></i>
+                                }
+                                <span class="ms-1 text-nike-gray">(@(product.ReviewCount ?? 0))</span>
+                            </div>
+
+                            <div class="nike-product-price mt-1">@((product.Price ?? 0).ToString("N0"))₫</div>
+
+                            <div class="nike-card-stock mt-2 @(product.Stock < 10 ? "stock-low" : "stock-ok")">
+                                <i class="fas @(product.Stock < 10 ? "fa-fire-alt" : "fa-check-circle") me-1"></i>
+                                <span>@(product.Stock > 0 ? $"Còn lại: {product.Stock}" : "Hết hàng")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Promotional Banner -->
+<section class="py-5 bg-nike-gray">
+    <div class="container">
+        <div class="row align-items-center g-0">
+            <div class="col-md-6 order-md-2">
+                <img src="https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=800" class="img-fluid w-100" alt="Nike Promo">
+            </div>
+            <div class="col-md-6 order-md-1 p-5" style="background: black; color: white;">
+                <h4 class="fw-black mb-3 text-uppercase">Ưu đãi thành viên</h4>
+                <p class="mb-5 opacity-75">Tham gia Nike Membership để nhận các đặc quyền, mã giảm giá và quyền truy cập sớm vào các bộ sưu tập giới hạn.</p>
+                <a href="#" class="btn-nike bg-white text-black px-5 py-3">Đăng ký ngay</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .fw-black { font-weight: 900 !important; }
+    .hero-image-wrapper { overflow: hidden; }
+    .hero-image-wrapper img { transition: transform 0.5s ease; }
+    .hero-image-wrapper:hover img { transform: scale(1.02); }
+    .text-nike-black { color: var(--nike-black); }
+</style>

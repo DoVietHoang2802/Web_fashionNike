@@ -1,0 +1,43 @@
+@model Category
+@{
+    ViewData["Title"] = "Thêm danh mục";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header">
+    <h2 class="page-title"><i class="fas fa-tags me-2"></i>Thêm danh mục mới</h2>
+</div>
+
+<div class="admin-card">
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <div class="row">
+            <div class="col-md-6">
+                <div class="admin-form-group">
+                    <label class="admin-label">Tên danh mục <span style="color:red">*</span></label>
+                    <input type="text" asp-for="Name" class="admin-input" placeholder="VD: Áo Thun" />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Mô tả</label>
+                    <input type="text" asp-for="Description" class="admin-input" placeholder="VD: Các loại áo thun nam" />
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Thứ tự hiển thị</label>
+                    <input type="number" asp-for="DisplayOrder" class="admin-input" min="0" value="0" />
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-form-check">
+                        <input type="checkbox" asp-for="IsActive" checked />
+                        Kích hoạt ngay
+                    </label>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save"></i> Lưu</button>
+            <a href="@Url.Action("Categories", "Admin")" class="btn btn-secondary btn-lg"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        </div>
+    </form>
+</div>

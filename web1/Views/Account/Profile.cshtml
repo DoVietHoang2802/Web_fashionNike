@@ -1,0 +1,439 @@
+@model web1.Models.ApplicationUser
+@{
+    ViewData["Title"] = "Hồ sơ cá nhân";
+    var hasAvatar = !string.IsNullOrEmpty(Model.AvatarUrl);
+}
+
+<div class="profile-page">
+    <!-- ─── Hero Header ──────────────────────────────────────────── -->
+    <section class="profile-hero">
+        <div class="container">
+            <p class="profile-eyebrow">
+                <i class="far fa-user-circle me-1"></i> Tài khoản
+            </p>
+            <h1 class="profile-title">Hồ sơ của tôi</h1>
+            <p class="profile-subtitle">Quản lý thông tin cá nhân và bảo mật tài khoản</p>
+        </div>
+    </section>
+
+    <section class="profile-content">
+        <div class="container">
+            <div class="profile-layout">
+
+                <!-- ─── Sidebar ─────────────────────────────────────── -->
+                <aside class="profile-sidebar">
+                    <!-- Avatar Card -->
+                    <div class="avatar-card">
+                        <div class="avatar-wrapper" id="avatarWrapper">
+                            @if (hasAvatar)
+                            {
+                                <img src="@Model.AvatarUrl" alt="@Model.FullName" class="avatar-img" id="avatarImg">
+                            }
+                            else
+                            {
+                                <div class="avatar-placeholder" id="avatarPlaceholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            }
+
+                            <!-- Upload overlay -->
+                            <label for="avatarInput" class="avatar-overlay" title="Đổi ảnh đại diện">
+                                <i class="fas fa-camera"></i>
+                            </label>
+                        </div>
+
+                        <h4 class="avatar-name">@Model.FullName</h4>
+                        <p class="avatar-email">@Model.Email</p>
+
+                        <!-- Upload form (hidden) -->
+                        <form asp-action="UploadAvatar" method="post" enctype="multipart/form-data" id="avatarForm">
+                            <input type="file" name="avatar" id="avatarInput"
+                                   accept=".jpg,.jpeg,.png,.gif,.webp"
+                                   class="d-none"
+                                   onchange="document.getElementById('avatarForm').submit();">
+                        </form>
+                    </div>
+
+                    <!-- Sidebar nav -->
+                    <nav class="profile-nav">
+                        <a asp-controller="Order" asp-action="MyOrders" class="profile-nav-item">
+                            <i class="fas fa-box me-3"></i>Đơn hàng
+                        </a>
+                        <a asp-controller="Wishlist" asp-action="Index" class="profile-nav-item">
+                            <i class="far fa-heart me-3"></i>Yêu thích
+                        </a>
+                        <a asp-action="ChangePassword" class="profile-nav-item">
+                            <i class="fas fa-lock me-3"></i>Đổi mật khẩu
+                        </a>
+                    </nav>
+
+                    <!-- Stats -->
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-val">@Model.CreatedAt.ToString("MM/yyyy")</span>
+                            <span class="stat-label">Tham gia</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-val">@(Model.Orders?.Count ?? 0)</span>
+                            <span class="stat-label">Đơn hàng</span>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- ─── Main Content ───────────────────────────────── -->
+                <main class="profile-main">
+
+                    <!-- Alerts -->
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert-custom alert-success mb-4">
+                            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert-custom alert-error mb-4">
+                            <i class="fas fa-circle-exclamation me-2"></i>@TempData["ErrorMessage"]
+                        </div>
+                    }
+
+                    <!-- Info Card -->
+                    <div class="info-card">
+                        <div class="info-card__header">
+                            <h2 class="info-card__title">Thông tin cá nhân</h2>
+                            <p class="info-card__desc">Cập nhật thông tin để nhận ưu đãi dành riêng cho bạn.</p>
+                        </div>
+
+                        <form asp-action="Profile" method="post" class="info-form">
+                            <div class="row g-4">
+                                <div class="col-12">
+                                    <label class="form-label-custom">Họ và tên</label>
+                                    <input type="text" name="fullName" class="form-input" value="@Model.FullName" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Email</label>
+                                    <input type="email" class="form-input bg-light" value="@Model.Email" readonly disabled>
+                                    <span class="form-hint">Email không thể thay đổi</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Ngày sinh</label>
+                                    <input type="date" name="dateOfBirth" class="form-input"
+                                           value="@(Model.DateOfBirth?.ToString("yyyy-MM-dd"))">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label-custom">Địa chỉ giao hàng mặc định</label>
+                                    <input type="text" name="address" class="form-input"
+                                           value="@Model.Address"
+                                           placeholder="Số nhà, Đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố">
+                                </div>
+                            </div>
+
+                            <div class="info-form__footer">
+                                <button type="submit" class="btn-save">
+                                    <i class="fas fa-check me-2"></i>Lưu thay đổi
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Member Perks -->
+                    <div class="perks-card">
+                        <h3 class="perks-title">
+                            <i class="fas fa-crown me-2"></i>Quyền lợi thành viên
+                        </h3>
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <div class="perk-item">
+                                    <div class="perk-icon"><i class="fas fa-truck-fast"></i></div>
+                                    <div>
+                                        <div class="perk-name">Miễn phí vận chuyển</div>
+                                        <div class="perk-desc">Cho mọi đơn từ 500K</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="perk-item">
+                                    <div class="perk-icon"><i class="fas fa-ticket"></i></div>
+                                    <div>
+                                        <div class="perk-name">Ưu đãi độc quyền</div>
+                                        <div class="perk-desc">Mã giảm giá & quà sinh nhật</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="perk-item">
+                                    <div class="perk-icon"><i class="fas fa-bolt"></i></div>
+                                    <div>
+                                        <div class="perk-name">Mua sớm</div>
+                                        <div class="perk-desc">Bộ sưu tập giới hạn</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+    /* ── Page Layout ─────────────────────────────────────────── */
+    .profile-hero {
+        background: linear-gradient(135deg, #111 0%, #333 100%);
+        padding: 48px 0 40px;
+        color: #fff;
+    }
+    .profile-eyebrow {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.5);
+        margin-bottom: 8px;
+    }
+    .profile-title {
+        font-size: clamp(1.8rem, 3vw, 2.5rem);
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+        margin-bottom: 6px;
+    }
+    .profile-subtitle {
+        color: rgba(255,255,255,0.6);
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+
+    .profile-content { padding: 48px 0 80px; background: #f8f8f8; }
+    .profile-layout {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 32px;
+        align-items: start;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────── */
+    .profile-sidebar { position: sticky; top: 90px; }
+
+    .avatar-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 32px 24px 24px;
+        text-align: center;
+        border: 1px solid #eee;
+        margin-bottom: 16px;
+    }
+
+    .avatar-wrapper {
+        position: relative;
+        width: 110px;
+        height: 110px;
+        margin: 0 auto 16px;
+    }
+    .avatar-img {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    }
+    .avatar-placeholder {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #ccc;
+        margin: 0 auto;
+    }
+    .avatar-overlay {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.25s;
+        cursor: pointer;
+        color: #fff;
+        font-size: 1.2rem;
+    }
+    .avatar-wrapper:hover .avatar-overlay { opacity: 1; }
+    .avatar-name {
+        font-size: 1rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    .avatar-email {
+        font-size: 0.8rem;
+        color: #999;
+        margin-bottom: 0;
+    }
+
+    /* Sidebar nav */
+    .profile-nav {
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid #eee;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+    .profile-nav-item {
+        display: flex;
+        align-items: center;
+        padding: 14px 20px;
+        color: #555;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.2s, color 0.2s;
+    }
+    .profile-nav-item:last-child { border-bottom: none; }
+    .profile-nav-item:hover { background: #f8f8f8; color: #111; }
+    .profile-nav-item i { color: #999; font-size: 0.85rem; width: 18px; }
+    .profile-nav-item:hover i { color: #111; }
+
+    /* Stats */
+    .profile-stats {
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid #eee;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+    }
+    .stat-item { text-align: center; }
+    .stat-val { display: block; font-size: 1.2rem; font-weight: 900; color: #111; }
+    .stat-label { font-size: 0.72rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.8px; }
+    .stat-divider { width: 1px; height: 30px; background: #eee; }
+
+    /* ── Main ─────────────────────────────────────────────────── */
+    .alert-custom {
+        padding: 12px 20px;
+        border-radius: 50px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+    .alert-success { background: #eafaf1; color: #1a9e5a; }
+    .alert-error { background: #fdeaea; color: #e74c3c; }
+
+    .info-card {
+        background: #fff;
+        border-radius: 20px;
+        border: 1px solid #eee;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    .info-card__header {
+        padding: 28px 32px 24px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .info-card__title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-bottom: 4px;
+    }
+    .info-card__desc { color: #999; font-size: 0.85rem; margin-bottom: 0; }
+
+    .info-form { padding: 28px 32px; }
+    .form-label-custom {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #555;
+        margin-bottom: 8px;
+    }
+    .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1.5px solid #e5e5e5;
+        border-radius: 10px;
+        font-size: 0.92rem;
+        font-family: inherit;
+        transition: border-color 0.2s;
+        outline: none;
+        background: #fff;
+        color: #111;
+    }
+    .form-input:focus { border-color: #111; }
+    .form-input.bg-light { background: #f8f8f8 !important; color: #888; cursor: not-allowed; }
+    .form-hint { font-size: 0.72rem; color: #aaa; margin-top: 5px; display: block; }
+
+    .info-form__footer {
+        border-top: 1px solid #f0f0f0;
+        padding-top: 24px;
+        margin-top: 8px;
+    }
+    .btn-save {
+        background: #111;
+        color: #fff;
+        border: none;
+        border-radius: 50px;
+        padding: 12px 32px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+    }
+    .btn-save:hover { background: #333; transform: scale(1.02); }
+
+    /* Perks */
+    .perks-card {
+        background: linear-gradient(135deg, #111, #222);
+        border-radius: 20px;
+        padding: 28px 32px;
+        color: #fff;
+    }
+    .perks-title {
+        font-size: 1rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 20px;
+        color: #fff;
+    }
+    .perk-item { display: flex; align-items: center; gap: 14px; }
+    .perk-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    .perk-name { font-size: 0.88rem; font-weight: 700; margin-bottom: 2px; }
+    .perk-desc { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+
+    /* Responsive */
+    @@media (max-width: 900px) {
+        .profile-layout { grid-template-columns: 1fr; }
+        .profile-sidebar { position: static; }
+    }
+    @@media (max-width: 576px) {
+        .info-form, .info-card__header, .perks-card { padding: 20px; }
+        .profile-hero { padding: 32px 0 28px; }
+    }
+</style>

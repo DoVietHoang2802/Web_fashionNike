@@ -1,0 +1,14 @@
+# .NET
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.user
+*.suo
+*.cache
+.vs/
+*.DotSettings.user
+packages/
+appsettings.Development.json
+

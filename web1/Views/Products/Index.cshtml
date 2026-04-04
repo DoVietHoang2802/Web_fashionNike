@@ -1,0 +1,318 @@
+@model IEnumerable<web1.Models.Product>
+@{
+    ViewData["Title"] = "Sản phẩm";
+    var categories = ViewBag.Categories as List<web1.Models.Category>;
+    var topSellingIds = ViewBag.TopSellingIds as List<int> ?? new List<int>();
+    var topRanking = topSellingIds.Select((id, index) => new { Id = id, Rank = index + 1 }).ToDictionary(x => x.Id, x => x.Rank);
+}
+
+<div class="container py-3">
+    <div class="row g-3">
+        <!-- Sidebar Filters -->
+        <div class="col-lg-3">
+            <div class="sticky-top" style="top: 100px;">
+                <h5 class="mb-3 fw-black">Bộ lọc</h5>
+
+                <form method="get" id="filterForm">
+                    <div class="filter-section mb-5 border-bottom pb-4">
+                        <label class="fw-bold mb-2 small text-nike-gray">Danh mục</label>
+                        <div class="d-flex flex-column gap-2">
+                            <div class="form-check custom-nike-check">
+                                <input class="form-check-input" type="radio" name="categoryId" id="cat-all" value="" onchange="this.form.submit()" @(ViewBag.CategoryId == null ? "checked" : "")>
+                                <label class="form-check-label small" for="cat-all">Tất cả sản phẩm</label>
+                            </div>
+                            @foreach (var cat in categories)
+                            {
+                                <div class="form-check custom-nike-check">
+                                    <input class="form-check-input" type="radio" name="categoryId" id="cat-@cat.Id" value="@cat.Id" onchange="this.form.submit()" @(ViewBag.CategoryId == cat.Id ? "checked" : "")>
+                                    <label class="form-check-label small" for="cat-@cat.Id">@cat.Name</label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="filter-section mb-5">
+                        <label class="fw-bold mb-2 small text-nike-gray">Tìm kiếm</label>
+                        <div class="nike-search-group">
+                            <input type="text" name="search" class="form-control border-nike rounded-0 py-2 px-3" placeholder="Ví dụ: Air Max..." value="@ViewBag.Search">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="col-lg-9">
+            @if (!Model.Any())
+            {
+                <div class="py-5 text-center">
+                    <i class="fas fa-search-minus nike-display-icon mx-auto"></i>
+                    <h4 class="nike-section-title mt-2">Không tìm thấy sản phẩm</h4>
+                    <p class="text-nike-gray mb-4">Hãy thử thay đổi tiêu chí lọc hoặc từ khóa tìm kiếm của bạn.</p>
+                    <a href="@Url.Action("Index", "Products")" class="btn-nike px-5">XEM TẤT CẢ</a>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    @foreach (var product in Model)
+                    {
+                        var rank = topRanking.ContainsKey(product.Id) ? topRanking[product.Id] : 0;
+                        <div class="col-lg-4 col-md-6">
+                            <div class="nike-card @(rank > 0 ? "best-seller-card" : "")">
+
+                                <!-- Rank Badge -->
+                                @if (rank > 0)
+                                {
+                                    var rankEmoji = rank == 1 ? "🥇" : (rank == 2 ? "🥈" : "🥉");
+                                    <div class="nike-card-badge">@rankEmoji</div>
+                                }
+
+                                <!-- Image Area -->
+                                <div class="nike-card-img" onclick="location.href='@Url.Action("Details", "Products", new { id = product.Id })'">
+                                    <img src="@product.ImageUrl" alt="@product.Name" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiPjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iNTAwIiBmaWxsPSIjRjFGNUY5Ii8+PC9zdmc+'">
+                                </div>
+
+                                <!-- Info Area -->
+                                <div class="nike-card-info">
+                                    <div class="nike-card-name" onclick="location.href='@Url.Action("Details", "Products", new { id = product.Id })'">@product.Name</div>
+                                    <div class="nike-card-cat">@(product.Category?.Name ?? "Nike Brand")</div>
+
+                                    <!-- Rating -->
+                                    <div class="nike-card-rating">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            <i class="fas fa-star @(i <= (int)Math.Round((double)(product.Rating ?? 0)) ? "star-on" : "star-off")"></i>
+                                        }
+                                        <span class="rating-num">(@(product.ReviewCount ?? 0))</span>
+                                    </div>
+
+                                    <!-- Price -->
+                                    <div class="nike-card-price">@((product.Price ?? 0).ToString("N0"))₫</div>
+
+                                </div>
+
+                                <!-- Add to Cart -->
+                                <div class="nike-card-action">
+                                    <button class="nike-btn-add" onclick="event.stopPropagation(); addToCart(@product.Id)">
+                                        <i class="fas fa-shopping-bag me-2"></i>Thêm vào giỏ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Pagination -->
+            @if ((ViewBag.TotalPages as int? ?? 0) > 1)
+            {
+                <div class="d-flex justify-content-center mt-5">
+                    <nav>
+                        <ul class="pagination mb-0 gap-1">
+                            @if ((ViewBag.CurrentPage as int? ?? 1) > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link shadow-none" href="@Url.Action("Index", "Products", new { categoryId = ViewBag.SelectedCategoryId, search = ViewBag.SearchTerm, sort = ViewBag.SortOrder, page = (ViewBag.CurrentPage as int? ?? 1) - 1 })">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            }
+
+                            @for (int i = 1; i <= (ViewBag.TotalPages as int? ?? 0); i++)
+                            {
+                                <li class="page-item @(i == (ViewBag.CurrentPage as int? ?? 1) ? "active" : "")">
+                                    <a class="page-link shadow-none" href="@Url.Action("Index", "Products", new { categoryId = ViewBag.SelectedCategoryId, search = ViewBag.SearchTerm, sort = ViewBag.SortOrder, page = i })">@i</a>
+                                </li>
+                            }
+
+                            @if ((ViewBag.CurrentPage as int? ?? 1) < (ViewBag.TotalPages as int? ?? 0))
+                            {
+                                <li class="page-item">
+                                    <a class="page-link shadow-none" href="@Url.Action("Index", "Products", new { categoryId = ViewBag.SelectedCategoryId, search = ViewBag.SearchTerm, sort = ViewBag.SortOrder, page = (ViewBag.CurrentPage as int? ?? 1) + 1 })">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black { font-weight: 800 !important; }
+    .custom-nike-check .form-check-input { width: 16px; height: 16px; border-radius: 0; border: 1px solid #ddd; cursor: pointer; margin-top: 2px; }
+    .custom-nike-check .form-check-input:checked { background-color: var(--nike-black); border-color: var(--nike-black); }
+    .custom-nike-check .form-check-label { padding-left: 8px; cursor: pointer; font-size: 0.82rem; }
+    .border-nike { border: 1px solid #e5e5e5 !important; }
+    .text-nike-gray { color: #888; }
+
+    /* ===== NIKE CARD ===== */
+    .nike-card {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e8e8e8;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    .nike-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+    }
+
+    /* Badge top */
+    .nike-card-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 10;
+        font-size: 1.3rem;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        animation: badge-pop 0.4s ease;
+    }
+    @@keyframes badge-pop {
+        0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+        70% { transform: scale(1.2) rotate(5deg); }
+        100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    /* Best seller border */
+    .best-seller-card {
+        border: 2px solid #FFD700;
+        box-shadow: 0 4px 16px rgba(255,215,0,0.25);
+    }
+    .best-seller-card:hover {
+        border-color: #FFC000;
+        box-shadow: 0 12px 32px rgba(255,200,0,0.35);
+    }
+
+    /* Image */
+    .nike-card-img {
+        width: 100%;
+        aspect-ratio: 1/1;
+        overflow: hidden;
+        background: #f5f5f5;
+        position: relative;
+    }
+    .nike-card-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+    }
+    .nike-card:hover .nike-card-img img {
+        transform: scale(1.06);
+    }
+
+    /* Info */
+    .nike-card-info {
+        padding: 14px 14px 8px;
+        flex-grow: 1;
+    }
+    .nike-card-name {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #111;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        line-height: 1.35;
+        margin-bottom: 4px;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        transition: color 0.2s;
+    }
+    .nike-card:hover .nike-card-name { color: #d32f2f; }
+
+    .nike-card-cat {
+        font-size: 0.72rem;
+        color: #999;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    /* Rating */
+    .nike-card-rating { margin-bottom: 6px; }
+    .star-on { color: #111; font-size: 0.7rem; }
+    .star-off { color: #ccc; font-size: 0.7rem; }
+    .rating-num { font-size: 0.7rem; color: #999; margin-left: 3px; }
+
+    /* Price */
+    .nike-card-price {
+        font-size: 1rem;
+        font-weight: 900;
+        color: #111;
+        margin-bottom: 8px;
+    }
+
+    /* Tags */
+    .nike-card-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    .nike-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    .tag-fire {
+        background: rgba(255,107,53,0.12);
+        color: #e64a19;
+        border: 1px solid rgba(255,107,53,0.25);
+    }
+    .tag-low {
+        background: rgba(244,67,54,0.08);
+        color: #c62828;
+        border: 1px solid rgba(244,67,54,0.2);
+    }
+    .tag-ok {
+        background: rgba(76,175,80,0.08);
+        color: #2e7d32;
+        border: 1px solid rgba(76,175,80,0.2);
+    }
+
+    /* Add to cart */
+    .nike-card-action {
+        padding: 10px 14px 14px;
+    }
+    .nike-btn-add {
+        width: 100%;
+        padding: 10px;
+        background: #111;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: background 0.25s, transform 0.15s;
+    }
+    .nike-btn-add:hover {
+        background: #d32f2f;
+        transform: scale(1.02);
+    }
+    .nike-btn-add:active {
+        transform: scale(0.97);
+    }
+
+    /* Pagination */
+    .page-link { color: #111; border-color: #ddd; border-radius: 6px !important; font-size: 0.82rem; }
+    .page-item.active .page-link { background: #111; border-color: #111; }
+</style>

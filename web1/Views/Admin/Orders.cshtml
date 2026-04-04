@@ -1,0 +1,157 @@
+@model IEnumerable<Order>
+@{
+    ViewData["Title"] = "Quản lý đơn hàng";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="page-title fw-bold text-dark"><i class="fas fa-shopping-bag me-2 text-primary opacity-75"></i>Quản lý đơn hàng</h2>
+        <p class="text-muted small mb-0 font-inter">Theo dõi và cập nhật trạng thái các đơn hàng từ khách hàng.</p>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 py-3 px-4 d-flex align-items-center animate__animated animate__fadeIn">
+        <i class="fas fa-check-circle me-3 fs-4"></i> 
+        <span class="fw-medium">@TempData["Success"]</span>
+    </div>
+}
+
+<!-- Modern Filter Bar (Glass) -->
+<div class="admin-card mb-4">
+    <form method="get" class="row g-3 align-items-center">
+        <div class="col-md-6">
+            <div class="input-group input-group-modern border rounded-3 p-1 bg-white">
+                <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-0 bg-white" placeholder="Tìm theo tên khách, SĐT hoặc mã đơn hàng..." value="@ViewBag.Search">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="admin-select">
+                <option value="">Tất cả trạng thái</option>
+                @foreach (var s in (string[])ViewBag.StatusList)
+                {
+                    <option value="@s" selected="@(ViewBag.Status?.ToString() == s)">@s</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn-admin btn-primary w-100 justify-content-center">Lọc ngay</button>
+            <a href="@Url.Action("Orders", "Admin")" class="btn-admin btn-secondary" title="Làm mới"><i class="fas fa-redo"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Orders Table Card -->
+<div class="admin-table-container shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="admin-table mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">Mã ĐH</th>
+                    <th>Khách hàng</th>
+                    <th>Ngày đặt</th>
+                    <th>Tổng tiền</th>
+                    <th>Thanh toán</th>
+                    <th class="text-center">Trạng thái</th>
+                    <th class="text-end pe-4">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Model)
+                {
+                    <tr class="transition-row">
+                        <td class="ps-4 fw-bold text-primary font-outfit">#@o.Id</td>
+                        <td>
+                            <div class="fw-bold text-dark">@o.CustomerName</div>
+                            <small class="text-muted font-inter"><i class="fas fa-phone me-1 extra-small"></i>@o.Phone</small>
+                        </td>
+                        <td class="text-muted font-inter">@(o.OrderDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</td>
+                        <td class="fw-bold text-dark font-outfit fs-6">@((o.TotalAmount ?? 0).ToString("N0"))đ</td>
+                        <td>
+                            <div class="small fw-bold text-dark">@o.PaymentMethod</div>
+                            @{
+                                var payClass = o.PaymentStatus == "Đã thanh toán" ? "badge-soft-success" : "badge-soft-secondary";
+                                var payIcon = o.PaymentStatus == "Đã thanh toán" ? "fa-check-circle" : "fa-clock";
+                            }
+                            <span class="badge-pill @payClass mt-1" style="font-size: 0.65rem; padding: 2px 8px;">
+                                <i class="fas @payIcon me-1"></i>@o.PaymentStatus
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            @{
+                                var statusClass = o.Status switch
+                                {
+                                    "Chờ xác nhận" => "badge-pending",
+                                    "Đang xử lý" => "badge-confirmed",
+                                    "Đang giao" => "badge-shipping",
+                                    "Đã giao" => "badge-delivered",
+                                    "Hoàn tất" => "badge-delivered",
+                                    "Đã hủy" => "badge-soft-danger",
+                                    _ => "badge-secondary"
+                                };
+                            }
+                            <span class="badge-status @statusClass px-3">@o.Status</span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="@Url.Action("OrderDetails", "Admin", new { id = o.Id })" class="btn btn-sm btn-light rounded-circle shadow-sm p-2" title="Chi tiết">
+                                    <i class="fas fa-eye text-primary"></i>
+                                </a>
+                                <form method="post" action="@Url.Action("OrderDelete", "Admin", new { id = o.Id })" onsubmit="return confirm('Xóa vĩnh viễn đơn hàng #@o.Id?')" class="d-inline m-0">
+                                    <button type="submit" class="btn btn-sm btn-light rounded-circle shadow-sm p-2" title="Xóa">
+                                        <i class="fas fa-trash-alt text-danger"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="opacity-25">
+                                <i class="fas fa-receipt fa-4x mb-3"></i>
+                                <p class="fw-bold">Không có đơn hàng nào!</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+@if ((int)ViewBag.TotalPages > 1)
+{
+    <nav class="mt-5">
+        <ul class="pagination justify-content-center border-0">
+            @if ((int)ViewBag.CurrentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link rounded-circle border-0 shadow-sm mx-1 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" href="@Url.Action("Orders", "Admin", new { page = (int)ViewBag.CurrentPage - 1, status = ViewBag.Status, search = ViewBag.Search })">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+            }
+            @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+            {
+                <li class="page-item @(i == (int)ViewBag.CurrentPage ? "active" : "")">
+                    <a class="page-link rounded-circle border-0 shadow-sm mx-1 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" href="@Url.Action("Orders", "Admin", new { page = i, status = ViewBag.Status, search = ViewBag.Search })">@i</a>
+                </li>
+            }
+            @if ((int)ViewBag.CurrentPage < (int)ViewBag.TotalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link rounded-circle border-0 shadow-sm mx-1 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" href="@Url.Action("Orders", "Admin", new { page = (int)ViewBag.CurrentPage + 1, status = ViewBag.Status, search = ViewBag.Search })">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

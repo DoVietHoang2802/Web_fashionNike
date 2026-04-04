@@ -1,0 +1,170 @@
+@model web1.Models.Order
+@{
+    ViewData["Title"] = "Thanh toán";
+    var cartItems = ViewBag.CartItems as List<web1.Models.CartItem>;
+    var appliedCode = ViewBag.AppliedCouponCode as string;
+    decimal subtotal = (ViewBag.Subtotal as decimal?) ?? 0;
+    decimal discount = (ViewBag.Discount as decimal?) ?? 0;
+    decimal total = subtotal - discount;
+}
+
+<div class="container py-4">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a asp-controller="Cart" asp-action="Index" class="text-dark"><i class="fas fa-chevron-left"></i></a>
+        <h2 class="mb-0 fw-black text-uppercase" style="letter-spacing: -0.02em;">Thanh toán</h2>
+    </div>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-danger border-0 rounded-4 py-3 mb-4 animate__animated animate__shakeX">
+            <i class="fas fa-exclamation-circle me-2"></i> @TempData["Message"]
+        </div>
+    }
+
+    <form asp-action="Checkout" method="post" id="checkoutForm">
+        <div class="row g-4">
+            <!-- Left: Thông tin + Thanh toán -->
+            <div class="col-lg-7">
+
+                <!-- Thông tin giao hàng -->
+                <div class="nike-checkout-card animate__animated animate__fadeInUp">
+                    <div class="nike-checkout-title">
+                        <i class="fas fa-truck text-nike-gray"></i> 1. Thông tin giao hàng
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold text-nike-gray">Họ tên khách hàng *</label>
+                            <input asp-for="CustomerName" class="form-control border-nike rounded-3 py-2 px-3" placeholder="Ví dụ: Nguyễn Văn A" required>
+                            <span asp-validation-for="CustomerName" class="text-danger extra-small"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold text-nike-gray">Số điện thoại *</label>
+                            <input asp-for="Phone" class="form-control border-nike rounded-3 py-2 px-3" placeholder="Ví dụ: 0123 456 789" required>
+                            <span asp-validation-for="Phone" class="text-danger extra-small"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-nike-gray">Địa chỉ nhận hàng chi tiết *</label>
+                            <textarea asp-for="Address" class="form-control border-nike rounded-3 py-2 px-3" rows="2" placeholder="Số nhà, tên đường, phường/xã, quận/huyện..." required></textarea>
+                            <span asp-validation-for="Address" class="text-danger extra-small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phương thức thanh toán -->
+                <div class="nike-checkout-card animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+                    <div class="nike-checkout-title">
+                        <i class="fas fa-credit-card text-nike-gray"></i> 2. Phương thức thanh toán
+                    </div>
+                    
+                    <div class="nike-payment-option active" onclick="selectPayment('COD', this)">
+                        <input type="radio" name="PaymentMethod" value="COD" checked id="cod">
+                        <div class="nike-payment-icon"><i class="fas fa-money-bill-wave"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small">Thanh toán khi nhận hàng (COD)</div>
+                            <div class="text-muted extra-small">Thanh toán bằng tiền mặt khi shipper giao hàng tới nơi.</div>
+                        </div>
+                        <i class="fas fa-check-circle text-dark ms-auto selection-check"></i>
+                    </div>
+
+                    <div class="nike-payment-option" onclick="selectPayment('Chuyển khoản', this)">
+                        <input type="radio" name="PaymentMethod" value="Chuyển khoản" id="banking">
+                        <div class="nike-payment-icon"><i class="fas fa-university"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small">Chuyển khoản ngân hàng</div>
+                            <div class="text-muted extra-small">Chuyển khoản qua QR hoặc STK (Sẽ hiển thị sau khi đặt hàng).</div>
+                        </div>
+                        <i class="fas fa-check-circle text-dark ms-auto selection-check d-none"></i>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Right: Đơn hàng -->
+            <div class="col-lg-5">
+                <div class="nike-checkout-card position-sticky animate__animated animate__fadeInRight" style="top: 100px;">
+                    <div class="nike-checkout-title">
+                        <i class="fas fa-shopping-cart text-nike-gray"></i> Tóm tắt đơn hàng
+                    </div>
+
+                    <!-- Danh sách sản phẩm -->
+                    <div class="mb-4" style="max-height: 400px; overflow-y: auto;">
+                        @if (cartItems != null)
+                        {
+                            foreach (var item in cartItems)
+                            {
+                                <div class="d-flex gap-3 mb-3 pb-3 border-bottom border-light">
+                                    <div class="position-relative">
+                                        <img src="@item.Product.ImageUrl" alt="@item.Product.Name"
+                                             style="width: 60px; height: 60px; object-fit: cover; flex-shrink: 0; border-radius: 8px; background: #f8f8f8;">
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark extra-small">
+                                            @item.Quantity
+                                        </span>
+                                    </div>
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div class="fw-bold text-truncate" style="font-size: 0.85rem;">@item.Product.Name</div>
+                                        <div class="text-muted extra-small mt-1">
+                                            @if (!string.IsNullOrEmpty(item.SelectedSize)) { <span class="me-2">Size: @item.SelectedSize</span> }
+                                            @if (!string.IsNullOrEmpty(item.SelectedColor)) { <span>Màu: @item.SelectedColor</span> }
+                                        </div>
+                                    </div>
+                                    <div class="fw-bold text-end" style="font-size: 0.85rem; min-width: 80px;">
+                                        @item.TotalPrice.ToString("N0")đ
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <!-- Totals -->
+                    <div class="bg-light p-3 rounded-4 mb-4">
+                        <div class="d-flex justify-content-between extra-small mb-2">
+                            <span class="text-muted">Tổng tiền hàng</span>
+                            <span class="fw-bold text-dark">@subtotal.ToString("N0")đ</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between extra-small mb-2 text-danger" id="discountSectionCheckout" style="@(discount > 0 ? "" : "display:none")">
+                            <span>Giảm giá @(appliedCode != null ? $"({appliedCode})" : "")</span>
+                            <span class="fw-bold">-@discount.ToString("N0")đ</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between extra-small mb-0">
+                            <span class="text-muted">Phí vận chuyển</span>
+                            <span class="text-success fw-bold">Miễn phí</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-4 px-1">
+                        <span class="fw-black text-uppercase small">Tổng thanh toán</span>
+                        <span class="h4 fw-black mb-0 text-dark">@total.ToString("N0")đ</span>
+                    </div>
+
+                    <button type="submit" class="btn btn-dark w-100 py-3 fw-black text-uppercase rounded-pill"
+                            style="font-size: 0.9rem; letter-spacing: 1px;">
+                        Hoàn tất đặt hàng
+                    </button>
+                    
+                    <p class="text-center text-muted extra-small mt-3">
+                        <i class="fas fa-lock me-1"></i> Thanh toán an toàn & bảo mật
+                    </p>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        function selectPayment(value, element) {
+            // Update radio input
+            $(`input[name="PaymentMethod"][value="${value}"]`).prop('checked', true);
+            
+            // Visual feedback
+            $('.nike-payment-option').removeClass('active');
+            $('.selection-check').addClass('d-none');
+            
+            $(element).addClass('active');
+            $(element).find('.selection-check').removeClass('d-none');
+        }
+    </script>
+}

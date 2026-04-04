@@ -1,0 +1,179 @@
+@model IEnumerable<Product>
+@{
+    ViewData["Title"] = "Quản lý sản phẩm";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="page-title mb-1">
+            <i class="fas fa-boxes-stacked me-2 text-primary"></i>Quản lý sản phẩm
+        </h2>
+        <p class="text-muted small mb-0">@Model.Count() sản phẩm trong kho</p>
+    </div>
+    <a href="@Url.Action("ProductCreate", "Admin")" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i> Thêm sản phẩm
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success mb-3">
+        <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+    </div>
+}
+
+<!-- Filter Bar -->
+<div class="admin-card mb-3">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="admin-label">Tìm kiếm</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" name="search" class="admin-input" value="@ViewBag.Search"
+                       placeholder="Tìm tên sản phẩm...">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="admin-label">Danh mục</label>
+            <select name="categoryId" class="admin-select">
+                <option value="">Tất cả</option>
+                @foreach (var cat in (List<Category>)ViewBag.Categories)
+                {
+                    <option value="@cat.Id" selected="@(ViewBag.CategoryId == cat.Id)">@cat.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="admin-label">Kho hàng</label>
+            <div class="form-check form-switch mt-2">
+                <input type="checkbox" name="lowStock" value="true" class="form-check-input"
+                       id="lowStockCheck" @(ViewBag.LowStock == true ? "checked" : "")>
+                <label class="form-check-label small" for="lowStockCheck">Sắp hết hàng</label>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                    <i class="fas fa-filter me-1"></i>Lọc
+                </button>
+                <a href="@Url.Action("Products", "Admin")" class="btn btn-secondary btn-sm" title="Làm mới">
+                    <i class="fas fa-sync-alt"></i>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Products Table -->
+<div class="admin-card p-0">
+    <div class="admin-table-container">
+        <table class="admin-table mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">Sản phẩm</th>
+                    <th>Danh mục</th>
+                    <th>Giá</th>
+                    <th class="text-center">Tồn kho</th>
+                    <th class="text-end pe-4">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    var stockClass = (p.Stock ?? 0) switch {
+                        <= 0 => "badge-status badge-soft-danger",
+                        < 10 => "badge-status badge-pending",
+                        _ => "badge-status badge-confirmed"
+                    };
+                    var stockText = (p.Stock ?? 0) switch {
+                        <= 0 => "Hết hàng",
+                        < 10 => $"Còn {p.Stock}",
+                        _ => p.Stock.ToString()
+                    };
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <img src="@p.ImageUrl" alt="@p.Name"
+                                     style="width: 44px; height: 44px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0;"
+                                     onerror="this.style.display='none'">
+                                <div>
+                                    <div class="fw-semibold small">@p.Name</div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">#@p.Id</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border small">@(p.Category?.Name ?? "—")</span>
+                        </td>
+                        <td>
+                            <span class="fw-bold small">@((p.Price ?? 0).ToString("N0"))đ</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="@stockClass">@stockText</span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="@Url.Action("ProductEdit", "Admin", new { id = p.Id })"
+                               class="btn btn-sm btn-secondary" title="Sửa">
+                                <i class="fas fa-pen text-primary"></i>
+                            </a>
+                            <form method="post" action="@Url.Action("ProductDelete", "Admin", new { id = p.Id })"
+                                  style="display:inline" onsubmit="return confirm('Xóa sản phẩm này?')">
+                                <button type="submit" class="btn btn-sm btn-secondary" title="Xóa">
+                                    <i class="fas fa-trash text-danger"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="fas fa-inbox fa-2x mb-2 d-block opacity-50"></i>
+                            Không có sản phẩm nào
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+@if ((int)ViewBag.TotalPages > 1)
+{
+    <div class="d-flex justify-content-center mt-4">
+        <nav>
+            <ul class="pagination mb-0 gap-1">
+                @if ((int)ViewBag.CurrentPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Products", "Admin",
+                            new { page = (int)ViewBag.CurrentPage - 1, search = ViewBag.Search, categoryId = ViewBag.CategoryId, lowStock = ViewBag.LowStock })">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                }
+
+                @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+                {
+                    <li class="page-item @(i == (int)ViewBag.CurrentPage ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Products", "Admin",
+                            new { page = i, search = ViewBag.Search, categoryId = ViewBag.CategoryId, lowStock = ViewBag.LowStock })">@i</a>
+                    </li>
+                }
+
+                @if ((int)ViewBag.CurrentPage < (int)ViewBag.TotalPages)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Products", "Admin",
+                            new { page = (int)ViewBag.CurrentPage + 1, search = ViewBag.Search, categoryId = ViewBag.CategoryId, lowStock = ViewBag.LowStock })">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    </div>
+}

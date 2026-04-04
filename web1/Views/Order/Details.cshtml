@@ -1,0 +1,182 @@
+@model web1.Models.Order
+@{
+    ViewData["Title"] = "Chi tiết đơn hàng #" + Model.Id;
+    
+    var statuses = new[] { "Chờ xác nhận", "Đã xác nhận", "Giao ĐVVC", "Đang giao", "Hoàn tất" };
+    string displayStatus = Model.Status == "Đã thanh toán" || Model.Status == "Đến nơi" ? "Đang giao" : (Model.Status ?? "");
+    int currentStep = Array.IndexOf(statuses, displayStatus);
+    if (Model.Status == "Đã hủy") currentStep = -1;
+
+    string GetStepStatus(int stepIndex) {
+        if (currentStep == -1) return "cancelled";
+        if (stepIndex < currentStep) return "completed";
+        if (stepIndex == currentStep) return "active";
+        return "pending";
+    }
+}
+
+<div class="container py-5 mt-4">
+    <!-- Breadcrumb & Header -->
+    <div class="mb-5">
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a asp-action="MyOrders" class="text-nike-gray text-decoration-none small text-uppercase fw-bold">Đơn hàng của tôi</a></li>
+                <li class="breadcrumb-item active small text-uppercase fw-bold" aria-current="page">#@Model.Id</li>
+            </ol>
+            <a asp-action="MyOrders" class="btn btn-outline-dark rounded-pill px-3 py-1 small fw-bold mt-2 d-inline-flex align-items-center gap-1">
+                <i class="fas fa-arrow-left"></i> Quay về
+            </a>
+        </nav>
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
+            <h2 class="fw-black text-uppercase mb-0">Chi tiết đơn hàng</h2>
+            <div class="d-flex gap-2">
+                @if (Model.Status == "Chờ xác nhận" || Model.Status == "Đã xác nhận")
+                {
+                    <form asp-action="CancelOrder" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Xác nhận hủy đơn hàng này?')">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-nike-outline py-2 px-4 shadow-none small fw-bold">HỦY ĐƠN</button>
+                    </form>
+                }
+                <button onclick="window.print()" class="btn-nike py-2 px-4 small fw-black">IN HÓA ĐƠN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Progress Stepper -->
+    <div class="border-nike bg-white p-5 mb-5">
+        @if (Model.Status == "Đã hủy")
+        {
+            <div class="text-center py-2">
+                <div class="h4 fw-black text-uppercase text-danger mb-2">ĐƠN HÀNG ĐÃ BỊ HỦY</div>
+                <p class="text-nike-gray mb-0">Vui lòng liên hệ bộ phận hỗ trợ nếu bạn có bất kỳ thắc mắc nào.</p>
+            </div>
+        }
+        else
+        {
+            <div class="nike-stepper d-flex justify-content-between position-relative">
+                <div class="stepper-line position-absolute top-50 start-0 w-100 translate-middle-y"></div>
+                @for (int i = 0; i < statuses.Length; i++)
+                {
+                    var statusState = GetStepStatus(i);
+                    <div class="step-node text-center position-relative z-1 @statusState">
+                        <div class="node-circle mx-auto mb-2 d-flex align-items-center justify-content-center fw-bold">
+                            @if (statusState == "completed") { <i class="fas fa-check"></i> } else { @(i + 1) }
+                        </div>
+                        <div class="small fw-bold text-uppercase @(statusState == "active" ? "text-nike-black" : "text-nike-gray")">@statuses[i]</div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="row g-5">
+        <!-- Order Items -->
+        <div class="col-lg-8">
+            <div class="border-nike bg-white overflow-hidden">
+                <div class="p-4 border-bottom">
+                    <h5 class="fw-black text-uppercase mb-0">Sản phẩm (@(Model.OrderItems?.Count ?? 0))</h5>
+                </div>
+                <div class="order-items- Nike">
+                    @foreach (var item in (Model.OrderItems ?? new List<OrderItem>()))
+                    {
+                        <div class="d-flex p-4 border-bottom">
+                            <div class="bg-nike-gray p-1" style="width: 100px; height: 100px; flex-shrink: 0;">
+                                <img src="@(item.Product?.ImageUrl ?? "")" class="w-100 h-100" style="object-fit: cover;" alt="@(item.Product?.Name)">
+                            </div>
+                            <div class="ms-4 flex-grow-1">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <h6 class="fw-black text-uppercase mb-0">@(item.Product?.Name ?? "Sản phẩm")</h6>
+                                    <div class="fw-bold">@(string.Format("{0:N0}", ((item.Price as decimal?) ?? 0m) * (item.Quantity ?? 0)))₫</div>
+                                </div>
+                                <div class="text-nike-gray extra-small mb-3">
+                                    @if (!string.IsNullOrEmpty(item.SelectedSize)) { <span class="me-3">SIZE: @item.SelectedSize</span> }
+                                    @if (!string.IsNullOrEmpty(item.SelectedColor)) { <span>MÀU: @item.SelectedColor</span> }
+                                </div>
+                                <div class="small fw-bold">@(string.Format("{0:N0}", item.Price))₫ x @item.Quantity</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                <div class="p-4 bg-nike-gray">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-nike-gray small fw-bold text-uppercase">Tạm tính</span>
+                        <span class="fw-bold">@(((Model.TotalAmount ?? 0) + (Model.DiscountAmount ?? 0)).ToString("N0"))₫</span>
+                    </div>
+                    @if (Model.DiscountAmount > 0)
+                    {
+                        <div class="d-flex justify-content-between mb-2 text-danger">
+                            <span class="small fw-bold text-uppercase">Giảm giá (@Model.CouponCode)</span>
+                            <span class="fw-bold">-@(Model.DiscountAmount?.ToString("N0"))₫</span>
+                        </div>
+                    }
+                    <hr class="my-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="h5 fw-black text-uppercase mb-0">Tổng cộng</span>
+                        <span class="h4 fw-black mb-0">@(Model.TotalAmount?.ToString("N0"))₫</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Panels -->
+        <div class="col-lg-4">
+            <div class="d-flex flex-column gap-4 sticky-top" style="top: 100px;">
+                <!-- Delivery Info -->
+                <div class="p-4 border-nike bg-white">
+                    <h5 class="fw-black text-uppercase mb-4">Giao hàng</h5>
+                    <div class="mb-4">
+                        <div class="fw-bold text-uppercase extra-small text-nike-gray mb-1">Người nhận</div>
+                        <div class="fw-bold">@(Model.CustomerName)</div>
+                        <div class="text-nike-gray">@(Model.Phone)</div>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-uppercase extra-small text-nike-gray mb-1">Địa chỉ</div>
+                        <div class="fw-bold text-capitalize">@(Model.Address)</div>
+                    </div>
+                </div>
+
+                <!-- Payment Info -->
+                <div class="p-4 border-nike bg-white">
+                    <h5 class="fw-black text-uppercase mb-4">Thanh toán</h5>
+                    <div class="p-3 border-nike bg-nike-gray mb-3">
+                        <div class="fw-black text-uppercase small mb-1">@(Model.PaymentMethod ?? "COD")</div>
+                        <div class="small fw-bold @((Model.PaymentStatus == "Đã thanh toán") ? "text-success" : (Model.PaymentStatus == "Thất bại" ? "text-danger" : "text-nike-gray"))">
+                            STATUS: @((Model.PaymentStatus ?? "Chưa thanh toán").ToUpper())
+                        </div>
+                    </div>
+
+                    @if (Model.Status == "Đến nơi" && Model.PaymentStatus != "Đã thanh toán")
+                    {
+                        <form asp-action="ConfirmShipperPayment" asp-route-id="@Model.Id" method="post"
+                              onsubmit="return confirm('Xác nhận bạn đã thanh toán tiền mặt cho shipper?')">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-nike w-100 py-3 text-uppercase fw-black">
+                                Tôi đã thanh toán cho shipper
+                            </button>
+                        </form>
+                        <div class="small text-nike-gray mt-2">
+                            Sau khi xác nhận, trạng thái sẽ chuyển sang <strong>Đã thanh toán</strong>.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black { font-weight: 900 !important; }
+    .border-nike { border: 1.5px solid #e5e5e5 !important; }
+    .extra-small { font-size: 0.7rem; }
+    
+    .nike-stepper .stepper-line { height: 2px; background: #e5e5e5; }
+    .step-node .node-circle { 
+        width: 32px; height: 32px; border-radius: 50%; 
+        background: white; border: 2px solid #e5e5e5;
+        transition: all 0.3s ease;
+    }
+    .step-node.completed .node-circle { background: black; border-color: black; color: white; }
+    .step-node.active .node-circle { border-color: black; color: black; border-width: 3px; }
+    .step-node.active .fw-bold { color: black !important; }
+</style>

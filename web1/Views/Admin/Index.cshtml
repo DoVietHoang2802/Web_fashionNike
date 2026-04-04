@@ -1,0 +1,271 @@
+@model web1.Controllers.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header mb-4">
+    <div>
+        <h2 class="page-title fw-bold text-dark"><i class="fas fa-chart-pie me-2 text-primary opacity-75"></i>Trung tâm điều khiển</h2>
+        <p class="text-muted small mb-0 font-inter">Chào mừng trở lại! Dưới đây là tóm tắt hoạt động kinh doanh của bạn.</p>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary-soft">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="stat-label">Tổng doanh thu</div>
+            <div class="stat-value font-outfit">@Model.TotalRevenue.ToString("N0")đ</div>
+            <div class="stat-footer text-success fw-bold font-inter" style="font-size: 0.7rem;">
+                <i class="fas fa-trending-up me-1"></i>Hoạt động rất tốt
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-success-soft">
+                <i class="fas fa-shopping-bag"></i>
+            </div>
+            <div class="stat-label">Đơn hàng</div>
+            <div class="stat-value font-outfit">@Model.TotalOrders</div>
+            <div class="stat-label fw-normal" style="font-size: 0.7rem; text-transform: none; letter-spacing: 0;">Khởi sắc trong tháng này</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-info-soft">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-label">Khách hàng</div>
+            <div class="stat-value font-outfit">@Model.TotalUsers</div>
+            <div class="stat-label fw-normal" style="font-size: 0.7rem; text-transform: none; letter-spacing: 0;">Khách hàng trung thành</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-warning-soft">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="stat-label">Sản phẩm</div>
+            <div class="stat-value font-outfit">@Model.TotalProducts</div>
+            <div class="stat-label fw-normal" style="font-size: 0.7rem; text-transform: none; letter-spacing: 0;">Sản phẩm đang kinh doanh</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Revenue Chart -->
+    <div class="col-lg-8">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5 class="admin-card-title"><i class="fas fa-chart-line me-2 text-primary opacity-75"></i>Xu hướng doanh thu (6 tháng)</h5>
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm rounded-circle shadow-sm" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 rounded-4">
+                        <li><a class="dropdown-item rounded-3 mb-1" href="#"><i class="fas fa-file-export me-2 text-muted"></i>Xuất báo cáo</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="p-2">
+                <canvas id="revenueChart" style="min-height: 320px;"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Orders Table -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5 class="admin-card-title"><i class="fas fa-clock me-2 text-primary opacity-75"></i>Đơn hàng mới nhất</h5>
+                <a href="@Url.Action("Orders", "Admin")" class="btn btn-light btn-sm rounded-pill px-3 font-inter fw-bold shadow-sm">Xem tất cả</a>
+            </div>
+            <div class="admin-table-container mt-2">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Mã ĐH</th>
+                            <th>Khách hàng</th>
+                            <th>Ngày đặt</th>
+                            <th>Tổng tiền</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th class="text-end pe-4">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model.RecentOrders.Take(5))
+                        {
+                            <tr class="transition-row">
+                                <td class="ps-4 fw-bold text-primary font-outfit">#@order.Id</td>
+                                <td class="fw-bold">@order.CustomerName</td>
+                                <td class="text-muted font-inter">@(order.OrderDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</td>
+                                <td class="fw-bold font-outfit">@((order.TotalAmount ?? 0).ToString("N0"))đ</td>
+                                <td class="text-center">
+                                    @{
+                                        var statusClass = order.Status switch
+                                        {
+                                            "Chờ xác nhận" => "badge-pending",
+                                            "Đang xử lý" => "badge-confirmed",
+                                            "Đang giao" => "badge-shipping",
+                                            "Đã giao" => "badge-delivered",
+                                            "Hoàn tất" => "badge-delivered",
+                                            "Đã hủy" => "badge-soft-danger",
+                                            _ => "badge-secondary"
+                                        };
+                                    }
+                                    <span class="badge-status @statusClass">@order.Status</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="@Url.Action("OrderDetails", "Admin", new { id = order.Id })" class="btn btn-sm btn-light rounded-circle shadow-sm" title="Chi tiết">
+                                        <i class="fas fa-arrow-right text-primary"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Stats & Low Stock -->
+    <div class="col-lg-4">
+        <!-- Waiting Orders Alert (Glass) -->
+        @if (Model.PendingOrders > 0)
+        {
+            <div class="admin-card border-0 mb-4 animate__animated animate__pulse animate__infinite" style="background: linear-gradient(135deg, #fff 0%, #fffbeb 100%); border: 1px solid #fde68a !important;">
+                <div class="d-flex align-items-center">
+                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle me-3">
+                        <i class="fas fa-exclamation-triangle fa-2xl text-warning"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-warning mb-1">Cần xử lý gấp!</h6>
+                        <p class="mb-2 extra-small text-muted font-inter">Bạn có <strong>@Model.PendingOrders</strong> đơn hàng mới đang chờ xác nhận.</p>
+                        <a href="@Url.Action("Orders", "Admin", new { status = "Chờ xác nhận" })" class="btn btn-warning btn-sm fw-bold rounded-pill px-3 shadow-sm">Xử lý ngay</a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Low Stock Products -->
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
+                <h5 class="admin-card-title"><i class="fas fa-boxes-stacked me-2 text-primary opacity-75"></i>Cảnh báo tồn kho</h5>
+            </div>
+            <div class="p-1">
+                @if (Model.LowStockProducts.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var p in Model.LowStockProducts.Take(5))
+                        {
+                            <div class="list-group-item px-0 py-3 border-light d-flex align-items-center bg-transparent">
+                                <img src="@p.ImageUrl" class="rounded-3 me-3 shadow-sm" style="width: 50px; height: 50px; object-fit: cover;" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDUwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjUwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiNGMUY1RjkiLz48cGF0aCBkPSJNMjUwIDIzMEMyNjEuMDQ2IDIzMCAyNzAgMjIxLjA0NiAyNzAgMjEwQzI3MCAxOTguOTU0IDI2MS4wNDYgMTkwIDI1MCAxOTBDMjM4Ljk1NCAxOTAgMjMwIDE5OC45NTQgMjMwIDIxMEMyMzAgMjIxLjA0NiAyMzguOTU0IDIzMCAyNTAgMjMwWiIgZmlsbD0iIzk0QTMzOCIvPjxwYXRoIGQ9Ik0zMDUgMzEwQzMwNSAyNzkuNjI0IDI4MC4zNzYgMjU1IDI1MCAyNTVDMjE5LjYyNCAyNTUgMTk1IDI3OS42MjQgMTk1IDMxMEgzMDVaIiBmaWxsPSIjOTRBMzM4Ii8+PC9zdmc+'">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h6 class="mb-1 text-truncate small fw-bold">@p.Name</h6>
+                                    <div class="text-danger extra-small fw-bold"><i class="fas fa-triangle-exclamation me-1"></i>Còn @p.Stock trong kho</div>
+                                </div>
+                                <a href="@Url.Action("ProductEdit", "Admin", new { id = p.Id })" class="btn btn-sm btn-outline-primary rounded-pill px-3">Nhập</a>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 opacity-50">
+                        <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                        <p class="text-muted small fw-bold">Kho hàng ổn định!</p>
+                    </div>
+                }
+            </div>
+            @if (Model.LowStockProducts.Count > 5)
+            {
+                <div class="text-center mt-3">
+                    <a href="@Url.Action("Products", "Admin", new { lowStock = true })" class="btn btn-link btn-sm text-primary text-decoration-none">Xem tất cả báo động</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-primary-soft { background-color: rgba(99, 102, 241, 0.1); color: #6366f1; }
+    .bg-success-soft { background-color: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .bg-info-soft { background-color: rgba(14, 165, 233, 0.1); color: #0ea5e9; }
+    .bg-warning-soft { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .transition-row { transition: all 0.2s ease; }
+    .transition-row:hover { background-color: rgba(99, 102, 241, 0.03) !important; transform: scale(1.002); }
+    .extra-small { font-size: 0.75rem; }
+    .badge-soft-danger { background: #fef2f2; color: #ef4444; }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            var labels = @Html.Raw(Json.Serialize(Model.MonthlyRevenue.Keys.ToList()));
+            var data = @Html.Raw(Json.Serialize(Model.MonthlyRevenue.Values.ToList()));
+
+            var myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Doanh thu',
+                        data: data,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 4,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#6366f1',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleFont: { family: 'Inter', size: 13 },
+                            bodyFont: { family: 'Inter', size: 13 },
+                            padding: 12,
+                            cornerRadius: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y.toLocaleString('vi-VN') + 'đ';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { borderDash: [5, 5], color: '#f1f5f9' },
+                            ticks: {
+                                font: { family: 'Inter', size: 11 },
+                                callback: function(value) {
+                                    return value >= 1000000 ? (value / 1000000).toFixed(1) + 'M' : value.toLocaleString('vi-VN');
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Inter', size: 11 } }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,49 @@
+@model Category
+@{
+    ViewData["Title"] = "Sửa danh mục";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header">
+    <h2 class="page-title"><i class="fas fa-tags me-2"></i>Sửa danh mục</h2>
+</div>
+
+<div class="admin-card">
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div class="row">
+            <div class="col-md-6">
+                <div class="admin-form-group">
+                    <label class="admin-label">Tên danh mục <span style="color:red">*</span></label>
+                    <input type="text" asp-for="Name" class="admin-input" />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Mô tả</label>
+                    <input type="text" asp-for="Description" class="admin-input" />
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Thứ tự hiển thị</label>
+                    <input type="number" asp-for="DisplayOrder" class="admin-input" min="0" />
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Slug (URL)</label>
+                    <input type="text" asp-for="Slug" class="admin-input" readonly style="background:#f5f6fa" />
+                    <small class="text-muted">Tự động tạo từ tên</small>
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-form-check">
+                        <input type="checkbox" asp-for="IsActive" />
+                        Kích hoạt
+                    </label>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save"></i> Lưu thay đổi</button>
+            <a href="@Url.Action("Categories", "Admin")" class="btn btn-secondary btn-lg"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        </div>
+    </form>
+</div>

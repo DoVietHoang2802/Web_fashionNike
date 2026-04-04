@@ -1,0 +1,83 @@
+@model IEnumerable<Category>
+@{
+    ViewData["Title"] = "Quản lý danh mục";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-4">
+    <div>
+        <h2 class="fw-black text-uppercase mb-1">Danh mục sản phẩm</h2>
+        <p class="text-nike-gray mb-0 small">Phân loại và cấu trúc cửa hàng để tối ưu trải nghiệm khách hàng.</p>
+    </div>
+    <a href="@Url.Action("CategoryCreate", "Admin")" class="btn-nike px-4 py-2 text-uppercase fw-black small">
+        <i class="fas fa-plus me-2"></i> Thêm danh mục
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-dark border-0 rounded-0 small mb-4 py-3 px-4 fw-bold">
+        <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
+    </div>
+}
+
+<div class="border-nike bg-white overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-nike-gray">
+                <tr class="text-uppercase extra-small fw-black text-nike-gray">
+                    <th class="ps-4 py-3" style="width: 80px;">STT</th>
+                    <th class="py-3">Tên danh mục</th>
+                    <th class="py-3">Slug / Mã định danh</th>
+                    <th class="py-3">Mô tả</th>
+                    <th class="py-3 text-center">Trạng thái</th>
+                    <th class="py-3 text-end pe-4">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model.OrderBy(x => x.DisplayOrder))
+                {
+                    <tr class="border-bottom">
+                        <td class="ps-4">
+                            <span class="fw-black">@c.DisplayOrder</span>
+                        </td>
+                        <td>
+                            <div class="fw-black text-uppercase small">@c.Name</div>
+                        </td>
+                        <td><code class="text-nike-gray small">@c.Slug</code></td>
+                        <td><div class="text-truncate extra-small text-nike-gray" style="max-width: 200px;">@c.Description</div></td>
+                        <td class="text-center">
+                            @if (c.IsActive)
+                            {
+                                <span class="badge bg-black text-white rounded-0 px-2 py-1 extra-small fw-bold">ACTIVE</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-nike-gray border rounded-0 px-2 py-1 extra-small fw-bold">OFF</span>
+                            }
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="@Url.Action("CategoryEdit", "Admin", new { id = c.Id })" class="btn-nike-outline btn-sm px-3 py-1 extra-small fw-bold" title="Sửa">
+                                    SỬA
+                                </a>
+                                <form method="post" action="@Url.Action("CategoryDelete", "Admin", new { id = c.Id })"
+                                      onsubmit="return confirm('Xác nhận xóa danh mục &quot;@c.Name&quot;?')">
+                                    <button type="submit" class="btn-nike-outline btn-sm px-3 py-1 extra-small fw-bold text-danger border-danger" title="Xóa">
+                                        XÓA
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .fw-black { font-weight: 900 !important; }
+    .border-nike { border: 1.5px solid #e5e5e5 !important; }
+    .extra-small { font-size: 0.7rem; }
+</style>

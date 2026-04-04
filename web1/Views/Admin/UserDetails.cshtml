@@ -1,0 +1,149 @@
+@model ApplicationUser
+@{
+    ViewData["Title"] = $"Người dùng: {Model.FullName}";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var orders = (List<Order>)ViewBag.Orders!;
+    var roles = (List<string>)ViewBag.Roles!;
+}
+
+<div class="page-header">
+    <h2 class="page-title"><i class="fas fa-user me-2"></i>@Model.FullName</h2>
+    <a href="@Url.Action("Users", "Admin")" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Quay lại
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success-admin"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]</div>
+}
+
+<div class="row">
+    <!-- User Info -->
+    <div class="col-lg-4">
+        <div class="admin-card">
+            <h5 class="admin-card-title mb-3"><i class="fas fa-user me-2"></i>Thông tin tài khoản</h5>
+            <div class="order-info-item mb-2">
+                <div class="order-info-label">Họ tên</div>
+                <div class="order-info-value">@Model.FullName</div>
+            </div>
+            <div class="order-info-item mb-2">
+                <div class="order-info-label">Email</div>
+                <div class="order-info-value">@Model.Email</div>
+            </div>
+            <div class="order-info-item mb-2">
+                <div class="order-info-label">SĐT</div>
+                <div class="order-info-value">@Model.PhoneNumber</div>
+            </div>
+            <div class="order-info-item mb-2">
+                <div class="order-info-label">Địa chỉ</div>
+                <div class="order-info-value">@Model.Address</div>
+            </div>
+            <div class="order-info-item mb-2">
+                <div class="order-info-label">Ngày đăng ký</div>
+                <div class="order-info-value">@Model.RegisteredDate.ToString("dd/MM/yyyy")</div>
+            </div>
+            <div class="order-info-item mb-2">
+                <div class="order-info-label">Vai trò hiện tại</div>
+                <div class="order-info-value">
+                    @foreach (var r in roles)
+                    {
+                        <span class="badge-status @(r == "Admin" ? "badge-confirmed" : "badge-secondary")">@r</span>
+                    }
+                    @if (!roles.Any())
+                    {
+                        <span style="color:#999">Chưa có vai trò</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Roles -->
+        <div class="admin-card mt-3">
+            <h5 class="admin-card-title mb-3"><i class="fas fa-shield-alt me-2"></i>Phân quyền</h5>
+            @if (roles.Contains("Admin"))
+            {
+                <form method="post" action="@Url.Action("UpdateUserRole", "Admin", new { userId = Model.Id, role = "Admin", isAdd = false })">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="badge-status badge-confirmed">Admin</span>
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Xóa quyền Admin?')">
+                            <i class="fas fa-minus"></i> Xóa Admin
+                        </button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <form method="post" action="@Url.Action("UpdateUserRole", "Admin", new { userId = Model.Id, role = "Admin", isAdd = true })">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span style="color:#999">Chưa có quyền Admin</span>
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> Thêm Admin
+                        </button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+
+    <!-- Orders History -->
+    <div class="col-lg-8">
+        <div class="admin-card">
+            <h5 class="admin-card-title mb-3"><i class="fas fa-shopping-bag me-2"></i>Lịch sử đặt hàng (@orders.Count)</h5>
+            @if (orders.Any())
+            {
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Mã ĐH</th>
+                                <th>Ngày đặt</th>
+                                <th>Tổng tiền</th>
+                                <th>Thanh toán</th>
+                                <th>Trạng thái</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var o in orders)
+                            {
+                                <tr>
+                                    <td><strong style="color:#e94560">#@o.Id</strong></td>
+                                    <td>@(o.OrderDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</td>
+                                    <td><strong>@((o.TotalAmount ?? 0).ToString("N0"))đ</strong></td>
+                                    <td>@o.PaymentMethod</td>
+                                    <td>
+                                        @{
+                                            var badgeClass = o.Status switch
+                                            {
+                                                "Chờ xác nhận" => "badge-pending",
+                                                "Đã xác nhận" => "badge-confirmed",
+                                                "Đang giao" => "badge-shipping",
+                                                "Đã giao" => "badge-delivered",
+                                                "Đã hủy" => "badge-cancelled",
+                                                _ => "badge-secondary"
+                                            };
+                                        }
+                                        <span class="badge-status @badgeClass">@o.Status</span>
+                                    </td>
+                                    <td>
+                                        <a href="@Url.Action("OrderDetails", "Admin", new { id = o.Id })" class="btn btn-secondary btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>Người dùng chưa có đơn hàng nào</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

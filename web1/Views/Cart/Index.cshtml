@@ -1,0 +1,187 @@
+@model IEnumerable<web1.Models.CartItem>
+@{
+    ViewData["Title"] = "Giỏ hàng";
+
+    decimal subtotal = Model.Sum(i => i.TotalPrice);
+    decimal discount = (ViewBag.Discount as decimal?) ?? 0;
+    string? appliedCode = ViewBag.AppliedCouponCode as string;
+}
+
+<div class="container py-3">
+    <h2 class="mb-3 fw-black text-uppercase">Giỏ hàng (@Model.Count())</h2>
+
+    @if (TempData["CouponError"] != null)
+    {
+        <div class="alert alert-danger py-2 small">@TempData["CouponError"]</div>
+    }
+    @if (TempData["CouponSuccess"] != null)
+    {
+        <div class="alert alert-success py-2 small">@TempData["CouponSuccess"]</div>
+    }
+
+    @if (Model.Any())
+    {
+        <div class="row g-3">
+            <!-- Cart Items -->
+            <div class="col-lg-8">
+                @foreach (var item in Model)
+                {
+                    <div class="d-flex gap-3 p-3 bg-white mb-2" style="border: 1px solid #eee;">
+                        <img src="@item.Product.ImageUrl" alt="@item.Product.Name"
+                             style="width: 64px; height: 64px; object-fit: cover; flex-shrink: 0; border-radius: 4px;">
+
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small mb-1" style="font-size: 0.85rem;">@item.Product.Name</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">
+                                @if (!string.IsNullOrEmpty(item.SelectedSize)) { <span>SIZE: @item.SelectedSize</span> }
+                                @if (!string.IsNullOrEmpty(item.SelectedColor)) { <span class="ms-2">MÀU: @item.SelectedColor</span> }
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mt-2">
+                                <button class="btn btn-sm btn-outline-secondary rounded-0 px-2 py-0"
+                                        onclick="updateQuantity(@item.ProductId, @item.Quantity - 1, '@item.SelectedSize', '@item.SelectedColor')">−</button>
+                                <span class="fw-bold small" style="min-width: 20px; text-align: center;">@item.Quantity</span>
+                                <button class="btn btn-sm btn-outline-secondary rounded-0 px-2 py-0"
+                                        onclick="updateQuantity(@item.ProductId, @item.Quantity + 1, '@item.SelectedSize', '@item.SelectedColor')">+</button>
+
+                                <span class="fw-bold ms-auto">@item.TotalPrice.ToString("N0")đ</span>
+
+                                <button class="btn btn-sm btn-link text-danger p-0 ms-2 small fw-bold"
+                                        onclick="removeFromCart(@item.ProductId, '@item.SelectedSize', '@item.SelectedColor')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Summary -->
+            <div class="col-lg-4">
+                <div class="bg-white p-3" style="border: 1px solid #eee; position: sticky; top: 80px;">
+
+                    <!-- Voucher -->
+                    <div class="mb-3 pb-3" style="border-bottom: 1px solid #eee;">
+                        <div class="fw-bold small text-uppercase mb-2">Mã giảm giá</div>
+                        <div id="coupon-input-container">
+                            @if (!string.IsNullOrEmpty(appliedCode))
+                            {
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-dark rounded-0">@appliedCode</span>
+                                    <button type="button" onclick="removeCoupon()" class="btn btn-link text-danger p-0 small">Bỏ áp dụng</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="input-group input-group-sm">
+                                    <input type="text" id="couponCodeInput" class="form-control rounded-0" placeholder="Nhập mã...">
+                                    <button class="btn btn-dark rounded-0" type="button" onclick="applyCoupon()">Áp dụng</button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                     <!-- Tổng cộng -->
+                     <div class="d-flex justify-content-between mb-2">
+                         <span class="text-muted small">Tạm tính</span>
+                         <span class="fw-bold" id="cart-subtotal">@subtotal.ToString("N0")đ</span>
+                     </div>
+ 
+                     <div class="d-flex justify-content-between mb-2 text-danger" id="cart-discount-row" style="@(discount > 0 ? "" : "display:none")">
+                         <span class="small">Giảm giá <span id="cart-applied-code-label">@(!string.IsNullOrEmpty(appliedCode) ? $"({appliedCode})" : "")</span></span>
+                         <span class="fw-bold" id="cart-discount">-@discount.ToString("N0")đ</span>
+                     </div>
+ 
+                     <div class="d-flex justify-content-between fw-black text-uppercase mb-3 pb-3" style="border-bottom: 1px solid #eee;">
+                         <strong style="font-size: 0.9rem;">Tổng</strong>
+                         <strong style="font-size: 0.9rem;" id="cart-total">@((subtotal - discount).ToString("N0"))đ</strong>
+                     </div>
+ 
+                     <a asp-controller="Order" asp-action="Checkout" class="btn btn-dark w-100 mb-2 py-2 fw-bold rounded-0"
+                        style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                         Thanh toán
+                     </a>
+                     <a asp-controller="Products" asp-action="Index"
+                        class="btn btn-outline-dark w-100 py-2 fw-bold rounded-0"
+                        style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                         Tiếp tục mua sắm
+                     </a>
+                 </div>
+             </div>
+         </div>
+     }
+     else
+     {
+         <div class="text-center py-5">
+             <i class="fas fa-shopping-bag fa-3x text-muted mb-3 d-block"></i>
+             <h5 class="fw-bold">Giỏ hàng trống</h5>
+             <a asp-controller="Products" asp-action="Index" class="btn btn-dark mt-3 rounded-0 px-4">Mua sắm ngay</a>
+         </div>
+     }
+ </div>
+ 
+ @section Scripts {
+ <script>
+     function updateQuantity(productId, quantity, selectedSize, selectedColor) {
+         if (quantity <= 0) { removeFromCart(productId, selectedSize, selectedColor); return; }
+         $.post('@Url.Action("UpdateQuantity", "Cart")', {
+             productId, quantity, selectedSize, selectedColor
+         }, function (response) {
+             if (response.success) location.reload();
+             else alert(response.message);
+         });
+     }
+ 
+     function removeFromCart(productId, selectedSize, selectedColor) {
+         if (!confirm('Xóa sản phẩm này?')) return;
+         $.post('@Url.Action("RemoveFromCart", "Cart")', {
+             productId, selectedSize, selectedColor
+         }, function (response) {
+             if (response.success) location.reload();
+         });
+     }
+ 
+     function applyCoupon(event) {
+         if (event) event.preventDefault();
+         const code = $('#couponCodeInput').val();
+         if (!code) return;
+ 
+         $.post('@Url.Action("ApplyCoupon", "Order")', { code: code }, function (res) {
+             if (res.success) {
+                 $('#cart-discount-row').show();
+                 $('#cart-applied-code-label').text('(' + res.code + ')');
+                 $('#cart-discount').text('-' + res.discount.toLocaleString() + 'đ');
+                 $('#cart-total').text(res.total.toLocaleString() + 'đ');
+                 
+                 // Replace input with badge
+                 const badgeHtml = `
+                     <div class="d-flex justify-content-between align-items-center">
+                         <span class="badge bg-dark rounded-0">${res.code}</span>
+                         <button type="button" onclick="removeCoupon()" class="btn btn-link text-danger p-0 small">Bỏ áp dụng</button>
+                     </div>`;
+                 $('#coupon-input-container').html(badgeHtml);
+                 
+                 // Show success alert
+                 alert('Áp dụng mã giảm giá thành công: ' + res.description);
+             } else {
+                 alert(res.message);
+             }
+         });
+     }
+ 
+     function removeCoupon() {
+         $.post('@Url.Action("ApplyCoupon", "Order")', { code: '' }, function (res) {
+             if (res.success) {
+                 $('#cart-discount-row').hide();
+                 $('#cart-total').text(res.total.toLocaleString() + 'đ');
+                 
+                 const inputHtml = `
+                     <div class="input-group input-group-sm">
+                         <input type="text" id="couponCodeInput" class="form-control rounded-0" placeholder="Nhập mã...">
+                         <button class="btn btn-dark rounded-0" type="button" onclick="applyCoupon()">Áp dụng</button>
+                     </div>`;
+                 $('#coupon-input-container').html(inputHtml);
+             }
+         });
+     }
+ </script>
+ }

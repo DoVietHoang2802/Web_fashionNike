@@ -1,0 +1,152 @@
+@model Coupon
+@{
+    ViewData["Title"] = "Thêm mã giảm giá";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="page-title fw-bold text-dark"><i class="fas fa-plus-circle me-2 text-primary opacity-75"></i>Thêm mã giảm giá mới</h2>
+        <p class="text-muted small mb-0 font-inter">Thiết lập thông tin ưu đãi và giới hạn sử dụng cho mã mới.</p>
+    </div>
+    <a href="@Url.Action("Coupons", "Admin")" class="btn-admin btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Quay lại danh sách
+    </a>
+</div>
+
+<div class="row justify-content-center pt-2">
+    <div class="col-xl-10">
+        <div class="admin-card p-4 p-md-5">
+            <form method="post" class="needs-validation" novalidate>
+                @Html.AntiForgeryToken()
+                
+                <div class="row g-4 mb-5">
+                    <!-- Left Column: Core Info -->
+                    <div class="col-lg-6">
+                        <h5 class="fw-bold mb-4 text-dark border-start border-4 border-primary ps-3">Thông tin cơ bản</h5>
+                        
+                        <div class="admin-form-group mb-4">
+                            <label class="admin-label fw-bold mb-2">Mã giảm giá <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0 rounded-start-4"><i class="fas fa-tag text-muted"></i></span>
+                                <input type="text" asp-for="Code" class="form-control admin-input rounded-end-4" 
+                                       placeholder="Ví dụ: SUMMER2026" style="text-transform:uppercase" required />
+                            </div>
+                            <span asp-validation-for="Code" class="text-danger extra-small mt-1 d-block"></span>
+                        </div>
+
+                        <div class="admin-form-group mb-4">
+                            <label class="admin-label fw-bold mb-2">Mô tả ngắn</label>
+                            <textarea asp-for="Description" class="form-control admin-input rounded-4" rows="2" 
+                                      placeholder="Mô tả ưu đãi cho khách hàng biết..."></textarea>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="admin-form-group mb-4">
+                                    <label class="admin-label fw-bold mb-2">Loại giảm giá</label>
+                                    <select asp-for="DiscountType" class="form-select admin-select rounded-4">
+                                        <option value="0">Phần trăm (%)</option>
+                                        <option value="1">Tiền mặt (VNĐ)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="admin-form-group mb-4">
+                                    <label class="admin-label fw-bold mb-2">Giá trị giảm <span class="text-danger">*</span></label>
+                                    <input type="number" asp-for="DiscountValue" class="form-control admin-input rounded-4" 
+                                           min="1" placeholder="VD: 10 hoặc 50000" required />
+                                    <span asp-validation-for="DiscountValue" class="text-danger extra-small mt-1 d-block"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="admin-form-group mb-4">
+                            <label class="admin-label fw-bold mb-2">Giảm tối đa (VNĐ)</label>
+                            <input type="number" asp-for="MaxDiscount" class="form-control admin-input rounded-4" 
+                                   min="0" placeholder="Để trống nếu không giới hạn" />
+                            <div class="extra-small text-muted mt-2 px-2">
+                                <i class="fas fa-info-circle me-1"></i> Chỉ áp dụng khi loại giảm giá là <strong>%</strong>.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Rules & Limits -->
+                    <div class="col-lg-6">
+                        <h5 class="fw-bold mb-4 text-dark border-start border-4 border-primary ps-3">Quy tắc & Giới hạn</h5>
+
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="admin-form-group mb-4">
+                                    <label class="admin-label fw-bold mb-2">Đơn hàng tối thiểu</label>
+                                    <input type="number" asp-for="MinOrderAmount" class="form-control admin-input rounded-4" 
+                                           min="0" placeholder="VD: 200000" />
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="admin-form-group mb-4">
+                                    <label class="admin-label fw-bold mb-2">Số lượng mã</label>
+                                    <input type="number" asp-for="MaxUsageCount" class="form-control admin-input rounded-4" 
+                                           min="1" value="100" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="admin-form-group mb-4">
+                                    <label class="admin-label fw-bold mb-2">Ngày bắt đầu</label>
+                                    <input type="date" asp-for="StartDate" class="form-control admin-input rounded-4" 
+                                           value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="admin-form-group mb-4">
+                                    <label class="admin-label fw-bold mb-2">Ngày hết hạn</label>
+                                    <input type="date" asp-for="ExpiredDate" class="form-control admin-input rounded-4" 
+                                           value="@DateTime.Now.AddMonths(1).ToString("yyyy-MM-dd")" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="admin-form-group pt-3">
+                            <div class="form-check form-switch custom-switch p-3 rounded-4 bg-light border border-white">
+                                <input class="form-check-input ms-0 me-3" type="checkbox" asp-for="IsActive" checked id="isActiveSwitch">
+                                <label class="form-check-label fw-bold text-dark cursor-pointer" for="isActiveSwitch">Kích hoạt mã ngay bây giờ</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-4">
+                    <button type="submit" class="btn-admin btn-primary px-5 py-3 rounded-pill shadow-lg">
+                        <i class="fas fa-save me-2"></i> Lưu mã giảm giá
+                    </button>
+                    <a href="@Url.Action("Coupons", "Admin")" class="btn-admin btn-secondary px-5 py-3 rounded-pill">
+                        Hủy bỏ
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-switch {
+        display: flex;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+    .custom-switch:hover {
+        background: rgba(99, 102, 241, 0.05) !important;
+        border-color: rgba(99, 102, 241, 0.2) !important;
+    }
+    .form-check-input:checked {
+        background-color: #6366f1;
+        border-color: #6366f1;
+    }
+    .admin-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+</style>

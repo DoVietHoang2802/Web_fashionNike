@@ -1,0 +1,158 @@
+@model Product
+@{
+    ViewData["Title"] = "Thêm sản phẩm";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="page-title mb-1"><i class="fas fa-plus-circle me-2 text-primary"></i>Thêm sản phẩm mới</h2>
+        <p class="text-muted small mb-0">Điền thông tin sản phẩm bên dưới.</p>
+    </div>
+    <a href="@Url.Action("Products", "Admin")" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Quay lại
+    </a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<form asp-action="ProductCreate" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+
+    <div class="row">
+        <!-- Left: Thông tin chính -->
+        <div class="col-lg-8">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h5 class="admin-card-title"><i class="fas fa-info-circle me-2 text-primary"></i>Thông tin sản phẩm</h5>
+                </div>
+                <div class="px-3 pb-3">
+                    <div class="admin-form-group">
+                        <label class="admin-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                        <input type="text" asp-for="Name" class="admin-input" placeholder="VD: Áo Sơ Mi Trắng Cổ Đức" required />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+
+                    <div class="admin-form-group">
+                        <label class="admin-label">Mô tả</label>
+                        <textarea asp-for="Description" class="admin-textarea" rows="4" placeholder="Mô tả chi tiết sản phẩm..."></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="admin-form-group">
+                                <label class="admin-label">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                                <input type="number" asp-for="Price" class="admin-input" min="0" placeholder="299000" required />
+                                <span asp-validation-for="Price" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="admin-form-group">
+                                <label class="admin-label">Danh mục <span class="text-danger">*</span></label>
+                                <select asp-for="CategoryId" class="admin-select" required>
+                                    <option value="">-- Chọn danh mục --</option>
+                                    @foreach (var cat in (List<Category>)ViewBag.Categories)
+                                    {
+                                        <option value="@cat.Id">@cat.Name</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-form-group mb-0">
+                        <label class="admin-label">Số lượng tồn kho</label>
+                        <input type="number" asp-for="Stock" class="admin-input" min="0" value="100" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Ảnh + Hành động -->
+        <div class="col-lg-4">
+            <!-- Ảnh sản phẩm -->
+            <div class="admin-card mb-3">
+                <div class="admin-card-header">
+                    <h5 class="admin-card-title"><i class="fas fa-image me-2 text-primary"></i>Hình ảnh</h5>
+                </div>
+                <div class="px-3 pb-3">
+                    <!-- Preview ảnh -->
+                    <div class="text-center mb-3">
+                        <img id="imagePreview" src="#" alt="Preview"
+                             style="width:160px; height:160px; object-fit:cover; border-radius:12px; border:2px dashed #dde; display:none;" />
+                        <div id="imagePlaceholder" class="d-flex align-items-center justify-content-center"
+                             style="width:160px; height:160px; border-radius:12px; border:2px dashed #dde; background:#f8f9fa; margin:0 auto;">
+                            <div class="text-center text-muted small">
+                                <i class="fas fa-image fa-2x mb-1"></i>
+                                <div>Chưa chọn ảnh</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nhập URL -->
+                    <div class="admin-form-group">
+                        <label class="admin-label small">URL ảnh</label>
+                        <input type="url" asp-for="ImageUrl" id="imageUrlInput" class="admin-input" placeholder="https://..." />
+                    </div>
+
+                    <!-- Hoặc upload -->
+                    <div class="admin-form-group mb-0">
+                        <label class="admin-label small">Hoặc tải ảnh lên</label>
+                        <input type="file" name="ImageFile" class="admin-input" accept="image/*"
+                               onchange="previewImage(this)" />
+                        <small class="text-muted">JPG, PNG (tối đa 5MB)</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nút hành động -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary py-2">
+                    <i class="fas fa-save me-1"></i> Lưu sản phẩm
+                </button>
+                <a href="@Url.Action("Products", "Admin")" class="btn btn-secondary py-2">
+                    <i class="fas fa-times me-1"></i> Hủy bỏ
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+    // Preview ảnh khi chọn file
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('imagePlaceholder').style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Preview ảnh khi nhập URL
+    document.getElementById('imageUrlInput')?.addEventListener('input', function () {
+        var url = this.value.trim();
+        var preview = document.getElementById('imagePreview');
+        var placeholder = document.getElementById('imagePlaceholder');
+        if (url) {
+            preview.src = url;
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+            preview.onerror = function () {
+                preview.style.display = 'none';
+                placeholder.style.display = 'flex';
+            };
+        } else {
+            preview.style.display = 'none';
+            placeholder.style.display = 'flex';
+        }
+    });
+</script>
+}

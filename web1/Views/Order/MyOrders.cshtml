@@ -1,0 +1,167 @@
+@model IEnumerable<web1.Models.Order>
+@{
+    ViewData["Title"] = "Đơn hàng của tôi";
+
+    string GetStatusClass(string? status) {
+        return (status ?? "") switch {
+            "Chờ xác nhận" => "bg-light text-dark border-nike",
+            "Đã xác nhận" or "Hoàn tất" => "bg-black text-white",
+            "Đang giao" or "Giao ĐVVC" or "Đến nơi" or "Đã thanh toán" => "bg-dark text-white opacity-75",
+            "Đã hủy" => "bg-nike-gray text-nike-gray opacity-50 text-decoration-line-through",
+            _ => "bg-light text-dark border-nike"
+        };
+    }
+}
+
+<div class="container py-5 mt-4">
+    <div class="d-flex justify-content-between align-items-end mb-5">
+        <div>
+            <h2 class="fw-black text-uppercase mb-1">Đơn hàng của tôi</h2>
+            <p class="text-nike-gray mb-0">Theo dõi và quản lý lịch sử mua sắm của bạn.</p>
+        </div>
+        @if (!User.Identity?.IsAuthenticated == true)
+        {
+            <div class="d-none d-md-block">
+                <form method="get" class="d-flex gap-2">
+                    <input type="email" name="email" class="form-control border-nike rounded-0 px-3 py-2" 
+                           placeholder="Tra cứu theo email..." value="@Context.Request.Query["email"]">
+                    <button type="submit" class="btn-nike px-4 py-2 text-uppercase fw-bold small">Tìm</button>
+                </form>
+            </div>
+        }
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="text-center py-5 border-nike bg-white">
+            <i class="fas fa-shopping-bag fa-4x text-nike-gray mb-4 opacity-25"></i>
+            <h4 class="fw-black text-uppercase">Chưa có đơn hàng nào</h4>
+            <p class="text-nike-gray mb-4">@(string.IsNullOrEmpty(Context.Request.Query["email"]) ? "Hãy bắt đầu mua sắm để lấp đầy tủ đồ của bạn." : "Không tìm thấy đơn hàng liên kết với email này.")</p>
+            <a asp-controller="Products" asp-action="Index" class="btn-nike px-5 py-3 text-uppercase">Mua sắm ngay</a>
+        </div>
+    }
+    else
+    {
+    <div class="nike-order-list py-2">
+        @foreach (var order in Model)
+        {
+            <div class="order-item-nike border-nike bg-white p-3 mb-2 transition-all shadow-sm rounded-3">
+                <div class="row align-items-center g-3">
+                    <!-- Order ID & Date -->
+                    <div class="col-md-3">
+                        <div class="fw-black text-uppercase extra-small text-nike-gray mb-0">Mã đơn hàng</div>
+                        <div class="h6 fw-black mb-0">#@order.Id</div>
+                        <div class="extra-small text-nike-gray" style="font-size: 0.6rem;">@(((order.OrderDate as DateTime?) ?? DateTime.Now).ToString("dd/MM/yyyy HH:mm"))</div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="col-md-3">
+                        <div class="fw-black text-uppercase extra-small text-nike-gray mb-0">Chi tiết</div>
+                        <div class="fw-bold small">@((order.OrderItems?.Count as int?) ?? 0) sản phẩm</div>
+                        <div class="extra-small text-nike-gray text-truncate" style="font-size: 0.6rem;">
+                            @(string.Join(", ", order.OrderItems?.Select(i => i.Product?.Name).Take(1) ?? new List<string>()))
+                            @((order.OrderItems?.Count ?? 0) > 1 ? "..." : "")
+                        </div>
+                    </div>
+
+                    <!-- Status & Total -->
+                    <div class="col-md-4">
+                        <div class="row align-items-center">
+                            <div class="col-6">
+                                <div class="fw-black text-uppercase extra-small text-nike-gray mb-1">Trạng thái</div>
+                                <span class="badge rounded-0 px-2 py-1 fw-bold text-uppercase @GetStatusClass(order.Status)" style="font-size: 0.75rem;">
+                                    @(order.Status ?? "Chờ xác nhận")
+                                </span>
+
+                                @if (order.Status == "Đến nơi" && order.PaymentStatus != "Đã thanh toán" && User.Identity?.IsAuthenticated == true)
+                                {
+                                    <div class="mt-2 p-2 bg-light border-0 rounded-3 shadow-sm" style="background: linear-gradient(135deg, #ffffff 0%, #fff8f8 100%);">
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-danger bg-opacity-10 p-1 rounded-circle me-2">
+                                                    <i class="fas fa-truck-fast text-danger extra-small"></i>
+                                                </div>
+                                                <p class="mb-0 text-nike-gray fw-bold" style="font-size: 0.75rem;">Nhận hàng chưa?</p>
+                                            </div>
+                                            <form asp-action="ConfirmShipperPayment" method="post" class="m-0 ms-auto">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@order.Id" />
+                                                <button type="submit" class="btn btn-dark rounded-pill px-3 py-1 text-uppercase fw-bold hover-lift" style="font-size: 0.75rem;">
+                                                    Xác nhận
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                }
+                                else if (order.Status == "Đến nơi" && order.PaymentStatus != "Đã thanh toán")
+                                {
+                                    <div class="mt-1 text-danger fw-bold d-flex align-items-center" style="font-size:0.75rem;">
+                                        <span class="pulse-red me-1"></span>Chờ bạn xác nhận
+                                    </div>
+                                }
+                            </div>
+                            <div class="col-6 text-md-end">
+                                <div class="fw-black text-uppercase extra-small text-nike-gray mb-0">Tổng tiền</div>
+                                <div class="fw-black mb-0 text-primary">@(string.Format("{0:N0}", (order.TotalAmount as decimal?) ?? 0m))₫</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action -->
+                    <div class="col-md-2 text-md-end">
+                        <div class="d-flex flex-column gap-2">
+                            <a asp-action="Details" asp-route-id="@order.Id" class="btn btn-dark rounded-pill px-3 py-1 text-uppercase fw-bold btn-sm-details">Chi tiết</a>
+                            @if (order.Status == "Hoàn tất" || order.Status == "Đã hủy")
+                            {
+                                <form asp-action="DeleteFromHistory" method="post" onsubmit="return confirm('Xóa đơn hàng này khỏi lịch sử của bạn?')" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@order.Id" />
+                                    <button type="submit" class="btn btn-link text-danger p-0 border-0 text-uppercase fw-bold extra-small text-decoration-none opacity-75" style="font-size: 0.7rem;">
+                                        <i class="fas fa-trash-alt me-1"></i>Xóa lịch sử
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    }
+</div>
+
+<style>
+    .fw-black { font-weight: 900 !important; }
+    .border-nike { border: 1.5px solid #e5e5e5 !important; }
+    .extra-small { font-size: 0.7rem; }
+    .pulse-red {
+        width: 8px;
+        height: 8px;
+        background: #ff4444;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+        animation: pulse-red 2s infinite;
+    }
+    @@keyframes pulse-red {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 68, 68, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); }
+    }
+    .hover-lift { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .hover-lift:hover { transform: translateY(-3px); }
+    .rounded-4 { border-radius: 1.5rem !important; }
+    .btn-sm-details {
+        font-size: 0.78rem;
+        padding: 5px 14px;
+        border-radius: 50px;
+        background: #111;
+        border: 1.5px solid #111;
+        color: #fff;
+        transition: background 0.2s, color 0.2s;
+    }
+    .btn-sm-details:hover {
+        background: #fff;
+        color: #111;
+    }
+</style>

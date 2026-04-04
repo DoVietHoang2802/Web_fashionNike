@@ -1,0 +1,138 @@
+@model IEnumerable<Coupon>
+@{
+    ViewData["Title"] = "Quản lý mã giảm giá";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="page-title fw-bold text-dark"><i class="fas fa-ticket-alt me-2 text-primary opacity-75"></i>Quản lý mã giảm giá</h2>
+        <p class="text-muted small mb-0 font-inter">Tạo và quản lý các chương trình khuyến mãi cho cửa hàng.</p>
+    </div>
+    <a href="@Url.Action("CouponCreate", "Admin")" class="btn-admin btn-primary">
+        <i class="fas fa-plus me-1"></i> Thêm mã mới
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 py-3 px-4 d-flex align-items-center animate__animated animate__fadeIn">
+        <i class="fas fa-check-circle me-3 fs-4 text-success"></i>
+        <span class="fw-medium">@TempData["Success"]</span>
+    </div>
+}
+
+<div class="admin-card">
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th class="ps-4">Mã Coupon</th>
+                    <th>Chi tiết ưu đãi</th>
+                    <th>Giá trị</th>
+                    <th>Lượt dùng</th>
+                    <th>Hạn dùng</th>
+                    <th class="text-center">Trạng thái</th>
+                    <th class="text-end pe-4">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    var isExpired = c.ExpiredDate.HasValue && c.ExpiredDate.Value < DateTime.Now;
+                    var isExpiringSoon = c.ExpiredDate.HasValue && !isExpired && (c.ExpiredDate.Value - DateTime.Now).TotalDays < 7;
+                    var isFull = c.MaxUsageCount.HasValue && c.UsedCount >= c.MaxUsageCount.Value;
+                    
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="coupon-icon-box">
+                                    <i class="fas fa-tags"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark font-outfit mb-0">@c.Code</div>
+                                    <div class="extra-small text-muted text-truncate" style="max-width: 150px;">@c.Description</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                             <span class="badge @(c.DiscountType == web1.Models.DiscountType.Percent ? "badge-soft-info" : "badge-soft-primary") rounded-pill px-3 py-1 font-inter extra-small fw-bold">
+                                @(c.DiscountType == web1.Models.DiscountType.Percent ? "Giảm Phần Trăm" : "Giảm Tiền Mặt")
+                            </span>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark font-outfit fs-6">
+                                @(c.DiscountType == web1.Models.DiscountType.Percent ? c.DiscountValue + "%" : c.DiscountValue.ToString("N0") + "đ")
+                            </div>
+                            @if (c.MinOrderAmount > 0)
+                            {
+                                <div class="extra-small text-muted font-inter">Đơn từ @c.MinOrderAmount?.ToString("N0")đ</div>
+                            }
+                        </td>
+                        <td>
+                            <div class="usage-meter mb-1">
+                                <div class="usage-meter-bar @(isFull ? "bg-danger" : "bg-primary")" 
+                                     style="width: @(c.MaxUsageCount > 0 ? (c.UsedCount * 100 / c.MaxUsageCount) : 0)%"></div>
+                            </div>
+                            <div class="extra-small text-muted font-inter fw-medium text-center">
+                                @c.UsedCount / @(c.MaxUsageCount?.ToString() ?? "∞")
+                            </div>
+                        </td>
+                        <td>
+                            <div class="extra-small @(isExpired ? "text-danger fw-bold" : (isExpiringSoon ? "text-warning fw-bold" : "text-muted font-inter"))">
+                                <i class="far fa-calendar-alt me-1"></i>
+                                @(c.ExpiredDate?.ToString("dd/MM/yyyy") ?? "Không thời hạn")
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            @if (!c.IsActive)
+                            {
+                                <span class="badge-status badge-soft-secondary">Vô hiệu hóa</span>
+                            }
+                            else if (isExpired)
+                            {
+                                <span class="badge-status badge-soft-danger">Hết hạn</span>
+                            }
+                            else if (isFull)
+                            {
+                                <span class="badge-status badge-soft-danger">Hết lượt</span>
+                            }
+                            else if (isExpiringSoon)
+                            {
+                                <span class="badge-status badge-soft-warning">Sắp hết hạn</span>
+                            }
+                            else
+                            {
+                                <span class="badge-status badge-soft-success">Đang hoạt động</span>
+                            }
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="@Url.Action("CouponEdit", "Admin", new { id = c.Id })" class="btn-action btn-outline-primary" title="Chỉnh sửa">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="post" action="@Url.Action("CouponDelete", "Admin", new { id = c.Id })" style="display:inline"
+                                      onsubmit="return confirm('Bạn có chắc muốn xóa mã @c.Code?')">
+                                    <button type="submit" class="btn-action btn-outline-danger" title="Xóa">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="opacity-25 mb-3">
+                                <i class="fas fa-ticket-alt fa-3x mb-3 text-muted"></i>
+                                <p class="fw-bold mb-0">Chưa có mã giảm giá nào được tạo.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

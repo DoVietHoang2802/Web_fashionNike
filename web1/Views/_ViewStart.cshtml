@@ -1,0 +1,12 @@
+@{
+    // Admin area dùng layout riêng, website chính dùng layout mặc định
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    if (controller == "Admin")
+    {
+        Layout = "_AdminLayout";
+    }
+    else
+    {
+        Layout = "_Layout";
+    }
+}

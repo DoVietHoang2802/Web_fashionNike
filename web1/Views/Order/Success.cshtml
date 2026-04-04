@@ -1,0 +1,79 @@
+@model web1.Models.Order
+@{
+    ViewData["Title"] = "Đặt hàng thành công";
+}
+<div class="container py-5 mt-5 animate__animated animate__fadeIn">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 text-center">
+            <div class="mb-5">
+                <div class="display-3 fw-black text-uppercase mb-3">Cảm ơn bạn!</div>
+                <h4 class="fw-bold text-uppercase mb-4">Đơn hàng của bạn đã được tiếp nhận.</h4>
+                <p class="text-nike-gray mb-0">Mã đơn hàng: <span class="text-nike-black fw-black">#@Model.Id</span></p>
+                <p class="text-nike-gray">Chúng tôi sẽ gửi email xác nhận và thông tin giao hàng sớm nhất có thể.</p>
+            </div>
+
+            <div class="border-nike bg-white p-4 p-md-5 text-start mb-5">
+                <h5 class="fw-black text-uppercase mb-4 border-bottom pb-3">Tóm tắt đơn hàng</h5>
+                
+                @if (Model.OrderItems != null && Model.OrderItems.Any())
+                {
+                    <div class="mb-4">
+                        @foreach (var item in Model.OrderItems)
+                        {
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-nike-gray p-1" style="width: 60px; height: 60px; flex-shrink: 0;">
+                                    <img src="@item.Product?.ImageUrl" alt="@item.Product?.Name" class="w-100 h-100" style="object-fit: cover;">
+                                </div>
+                                <div class="ms-3 flex-grow-1">
+                                    <div class="fw-bold text-uppercase extra-small">@item.Product?.Name</div>
+                                    <div class="text-nike-gray extra-small">
+                                        SL: @item.Quantity | @((item.Price ?? 0).ToString("N0"))₫
+                                    </div>
+                                </div>
+                                <div class="fw-black">@(((item.Price ?? 0) * (item.Quantity ?? 0)).ToString("N0"))₫</div>
+                            </div>
+                        }
+                    </div>
+                    <hr class="my-4">
+                }
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="fw-black text-uppercase extra-small text-nike-gray mb-2">Giao hàng đến</div>
+                        <div class="fw-bold small">@Model.CustomerName</div>
+                        <div class="small text-nike-gray">@Model.Phone</div>
+                        <div class="small text-nike-gray text-capitalize">@Model.Address</div>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-nike-gray extra-small fw-bold text-uppercase text-start">Tạm tính</span>
+                            <span class="fw-bold small">@(((Model.TotalAmount ?? 0) + (Model.DiscountAmount ?? 0)).ToString("N0"))₫</span>
+                        </div>
+                        @if (Model.DiscountAmount > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-2 text-danger">
+                                <span class="extra-small fw-bold text-uppercase text-start">Giảm giá</span>
+                                <span class="fw-bold small">-@(Model.DiscountAmount?.ToString("N0"))₫</span>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                            <span class="fw-black text-uppercase">Tổng cộng</span>
+                            <span class="h4 fw-black mb-0">@((Model.TotalAmount ?? 0).ToString("N0"))₫</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
+                <a asp-controller="Home" asp-action="Index" class="btn-nike px-5 py-3 text-uppercase fw-black">Về trang chủ</a>
+                <a asp-controller="Order" asp-action="Details" asp-route-id="@Model.Id" class="btn-nike-outline px-5 py-3 text-uppercase fw-bold">Xem trạng thái đơn</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black { font-weight: 900 !important; }
+    .border-nike { border: 1.5px solid #e5e5e5 !important; }
+    .extra-small { font-size: 0.7rem; }
+</style>

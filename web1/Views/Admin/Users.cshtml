@@ -1,0 +1,89 @@
+@model IEnumerable<ApplicationUser>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var userRoles = (Dictionary<string, List<string>>)ViewBag.UserRoles!;
+}
+
+<div class="page-header">
+    <h2 class="page-title"><i class="fas fa-users me-2"></i>Quản lý người dùng</h2>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success-admin"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]</div>
+}
+
+<div class="admin-card">
+    <form method="get" class="search-box">
+        <input type="text" name="search" class="admin-input" placeholder="Tìm theo tên, email..." value="@ViewBag.Search" />
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Tìm</button>
+        <a href="@Url.Action("Users", "Admin")" class="btn btn-secondary">Reset</a>
+    </form>
+
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Họ tên</th>
+                    <th>Email</th>
+                    <th>Điện thoại</th>
+                    <th>Vai trò</th>
+                    <th>Ngày đăng ký</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr>
+                        <td><strong>@u.FullName</strong></td>
+                        <td>@u.Email</td>
+                        <td>@u.PhoneNumber</td>
+                        <td>
+                            @{
+                                var roles = userRoles.GetValueOrDefault(u.Id) ?? new List<string>();
+                                foreach (var role in roles)
+                                {
+                                    <span class="badge-status @(role == "Admin" ? "badge-confirmed" : "badge-secondary")">@role</span>
+                                }
+                                if (!roles.Any())
+                                {
+                                    <span style="color:#999;font-size:0.8rem">Chưa có vai trò</span>
+                                }
+                            }
+                        </td>
+                        <td>@u.RegisteredDate.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <a href="@Url.Action("UserDetails", "Admin", new { id = u.Id })" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <p>Không có người dùng nào</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if ((int)ViewBag.TotalPages > 1)
+    {
+        <div class="admin-pagination">
+            @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+            {
+                <a href="@Url.Action("Users", "Admin", new { page = i, search = ViewBag.Search })"
+                   class="@(i == (int)ViewBag.CurrentPage ? "current" : "")">@i</a>
+            }
+        </div>
+    }
+</div>

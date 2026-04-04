@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Nike Admin</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="admin-sidebar" id="adminSidebar">
+        <a href="@Url.Action("Index", "Admin")" class="sidebar-brand">
+            <i class="fas fa-store"></i> NIKE ADMIN
+        </a>
+
+        <div class="sidebar-section-title">Hệ thống</div>
+        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
+           href="@Url.Action("Index", "Admin")">
+            <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+
+        <div class="sidebar-section-title">Quản lý kho</div>
+        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Products" ? "active" : "")"
+           href="@Url.Action("Products", "Admin")">
+            <i class="fas fa-box"></i> Sản phẩm
+        </a>
+        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Categories" ? "active" : "")"
+           href="@Url.Action("Categories", "Admin")">
+            <i class="fas fa-tags"></i> Danh mục
+        </a>
+
+        <div class="sidebar-section-title">Kinh doanh</div>
+        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Orders" ? "active" : "")"
+           href="@Url.Action("Orders", "Admin")">
+            <i class="fas fa-shopping-bag"></i> Đơn hàng
+        </a>
+        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Coupons" ? "active" : "")"
+           href="@Url.Action("Coupons", "Admin")">
+            <i class="fas fa-ticket-alt"></i> Mã giảm giá
+        </a>
+        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")"
+           href="@Url.Action("Users", "Admin")">
+            <i class="fas fa-users"></i> Người dùng
+        </a>
+
+        <div class="sidebar-section-title">Hệ thống</div>
+        <a class="sidebar-link" href="@Url.Action("Index", "Home")" target="_blank">
+            <i class="fas fa-external-link-alt"></i> Xem Website
+        </a>
+        <a class="sidebar-link" href="@Url.Action("Logout", "Account")">
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </a>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="admin-main">
+        <header class="admin-topbar">
+            <button class="topbar-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 class="topbar-title">@ViewData["Title"]</h1>
+            <div class="topbar-actions">
+                <span class="topbar-user">
+                    <i class="fas fa-user-shield"></i>
+                    <span>@User.Identity?.Name</span>
+                </span>
+            </div>
+        </header>
+
+        <main class="admin-content animate__animated animate__fadeIn">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Sidebar Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

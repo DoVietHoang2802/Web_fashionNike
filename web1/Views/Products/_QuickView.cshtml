@@ -1,0 +1,64 @@
+@model Product
+<div class="row g-0">
+    <div class="col-md-6">
+        <img src="@Model.ImageUrl" class="quick-view-img" alt="@Model.Name">
+    </div>
+    <div class="col-md-6">
+        <div class="p-4 h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <span class="badge bg-primary-soft text-primary mb-2">@Model.Category?.Name</span>
+                    <h3 class="fw-bold mb-0">@Model.Name</h3>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="text-warning small">
+                    @{
+                        var avgRating = (double)(Model.Rating ?? 0);
+                        for(int i=1; i<=5; i++) {
+                            <i class="fas fa-star @(i <= (int)Math.Round(avgRating) ? "" : "text-muted opacity-25")"></i>
+                        }
+                    }
+                </div>
+                <span class="text-muted small">(@(Model.ReviewCount ?? 0) đánh giá)</span>
+            </div>
+
+            <div class="mb-3">
+                <h4 class="text-primary fw-800 mb-0">@((Model.Price ?? 0).ToString("N0"))đ</h4>
+            </div>
+
+            <div class="description-scroll mb-4 flex-grow-1" style="max-height: 150px; overflow-y: auto;">
+                <p class="text-muted small">@Model.Description</p>
+            </div>
+
+            <div class="mt-auto">
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    <span class="badge @(Model.Stock > 0 ? "bg-success-soft text-success" : "bg-danger-soft text-danger") rounded-pill">
+                        <i class="fas @(Model.Stock > 0 ? "fa-check-circle" : "fa-times-circle") me-1"></i>
+                        @(Model.Stock > 0 ? $"Còn {Model.Stock} sản phẩm" : "Hết hàng")
+                    </span>
+                </div>
+                <div class="row g-2">
+                    <div class="col-12">
+                        <button class="btn btn-primary px-5 py-3 rounded-pill fw-bold w-100" onclick="addToCart(@Model.Id, 1, null, null, event)" @(Model.Stock <= 0 ? "disabled" : "")>
+                            <i class="fas fa-shopping-cart me-2"></i>@(Model.Stock > 0 ? "Thêm vào giỏ hàng" : "Hết hàng")
+                        </button>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id" class="text-decoration-none text-muted small fw-bold hover-primary">
+                        Xem chi tiết đầy đủ <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-primary-soft { background-color: rgba(99, 102, 241, 0.1); }
+    .fw-800 { font-weight: 800; }
+    .hover-primary:hover { color: #6366f1 !important; }
+</style>

@@ -1,0 +1,209 @@
+@model Order
+@{
+    ViewData["Title"] = $"Đơn hàng #{Model.Id}";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="page-title fw-bold text-dark"><i class="fas fa-receipt me-2 text-primary opacity-75"></i>Chi tiết đơn hàng #@Model.Id</h2>
+        <p class="text-muted small mb-0 font-inter">Xem thông tin chi tiết và quản lý trạng thái xử lý đơn hàng.</p>
+    </div>
+    <a href="@Url.Action("Orders", "Admin")" class="btn-admin btn-secondary">
+        <i class="fas fa-arrow-left"></i> Quay lại danh sách
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 py-3 px-4 d-flex align-items-center animate__animated animate__fadeIn">
+        <i class="fas fa-check-circle me-3" style="font-size: 1.25rem;"></i>
+        <span class="fw-bold">@TempData["Success"]</span>
+    </div>
+}
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4 py-3 px-4 d-flex align-items-center animate__animated animate__shakeX">
+        <i class="fas fa-exclamation-circle me-3" style="font-size: 1.25rem;"></i>
+        <span class="fw-bold">@TempData["Message"]</span>
+    </div>
+}
+
+<div class="row g-4">
+    <!-- Order & Customer Info column -->
+    <div class="col-lg-5">
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
+                <h5 class="admin-card-title"><i class="fas fa-info-circle me-2 text-primary"></i>Thông tin chung</h5>
+            </div>
+            
+            <div class="order-info-grid mb-4">
+                <div class="order-info-item">
+                    <div class="order-info-label">Mã đơn hàng</div>
+                    <div class="order-info-value font-outfit">#@Model.Id</div>
+                </div>
+                <div class="order-info-item">
+                    <div class="order-info-label">Ngày đặt hàng</div>
+                    <div class="order-info-value font-inter" style="font-size: 0.9rem;">@(string.Format("{0:dd/MM/yyyy HH:mm}", Model.OrderDate))</div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="order-info-label mb-2">Trạng thái xử lý</div>
+                @{
+                    var statusClass = Model.Status switch
+                    {
+                        "Chờ xác nhận" => "badge-pending",
+                        "Đã xác nhận" => "badge-confirmed",
+                        "Giao ĐVVC" => "badge-shipping",
+                        "Đang giao" => "badge-shipping",
+                        "Đến nơi" => "badge-delivered",
+                        "Đã thanh toán" => "badge-delivered bg-success text-white",
+                        "Hoàn tất" => "badge-delivered bg-success text-white",
+                        "Đã hủy" => "badge-soft-danger",
+                        _ => "badge-secondary"
+                    };
+                }
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge-status @statusClass fw-bold" style="font-size: 0.85rem;">@Model.Status</span>
+                    @if (Model.Status == "Đã thanh toán")
+                    {
+                        <span class="badge bg-success rounded-pill animate__animated animate__pulse animate__infinite">
+                            <i class="fas fa-check-circle me-1"></i> Khách đã báo trả tiền
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <div class="mb-4 p-3 rounded-4 bg-light border-start border-4 @(Model.Status == "Hoàn tất" || Model.Status == "Đã hủy" ? "border-secondary" : "border-primary")">
+                <div class="order-info-label mb-1">Cập nhật trạng thái</div>
+                @if (Model.Status != "Hoàn tất" && Model.Status != "Đã hủy")
+                {
+                    <form method="post" action="@Url.Action("UpdateOrderStatus", "Admin", new { orderId = Model.Id })">
+                        <div class="d-flex gap-2">
+                            <select name="status" class="admin-select flex-grow-1">
+                                @foreach (var s in new[] { "Chờ xác nhận", "Đã xác nhận", "Giao ĐVVC", "Đang giao", "Đến nơi", "Đã thanh toán", "Hoàn tất", "Đã hủy" })
+                                {
+                                    @* Chặn hiển thị "Đã hủy" nếu đơn hàng đã trong quá trình giao hoặc hoàn tất *@
+                                    if (s == "Đã hủy" && Model.Status != "Đã hủy" && (Model.Status == "Hoàn tất" || Model.Status == "Đã thanh toán" || Model.Status == "Đến nơi" || Model.Status == "Đang giao" || Model.Status == "Giao ĐVVC")) continue;
+
+                                    <option value="@s" selected="@(Model.Status == s)">
+                                        @s
+                                    </option>
+                                }
+                            </select>
+                            <button type="submit" class="btn-admin btn-primary px-3" title="Lưu thay đổi">
+                                <i class="fas fa-save"></i>
+                            </button>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <div class="d-flex align-items-center text-muted py-2 small fw-medium">
+                        <i class="fas fa-lock me-2"></i>
+                        <span>Đơn hàng đã kết thúc. Không thể thay đổi trạng thái.</span>
+                    </div>
+                }
+            </div>
+
+            <div class="admin-card-header mt-5">
+                <h5 class="admin-card-title"><i class="fas fa-user-circle me-2 text-primary"></i>Khách hàng</h5>
+            </div>
+            <div class="order-info-grid">
+                <div class="order-info-item w-100 mb-2">
+                    <div class="order-info-label">Họ tên</div>
+                    <div class="order-info-value">@Model.CustomerName</div>
+                </div>
+                <div class="order-info-item w-100 mb-2">
+                    <div class="order-info-label">Số điện thoại</div>
+                    <div class="order-info-value">@Model.Phone</div>
+                </div>
+                <div class="order-info-item w-100">
+                    <div class="order-info-label">Địa chỉ giao hàng</div>
+                    <div class="order-info-value font-inter" style="font-size: 0.9rem; line-height: 1.4;">@Model.Address</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items column -->
+    <div class="col-lg-7">
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
+                <h5 class="admin-card-title"><i class="fas fa-box-open me-2 text-primary"></i>Chi tiết sản phẩm</h5>
+                <span class="badge bg-primary bg-opacity-10 text-primary border-0 rounded-pill px-3 py-1 fw-bold">@(Model.OrderItems?.Count ?? 0) món</span>
+            </div>
+
+            @if (Model.OrderItems != null && Model.OrderItems.Any())
+            {
+                <div class="admin-order-items-list mb-4">
+                    @foreach (var item in (Model.OrderItems ?? new List<OrderItem>()))
+                    {
+                        <div class="admin-order-item-card p-3 mb-3 rounded-4 border bg-white d-flex flex-wrap flex-sm-nowrap align-items-center gap-3 gap-md-4 transition-all hover-shadow">
+                            <div class="product-img-wrapper" style="width: 100px; height: 100px; flex-shrink: 0; position: relative;">
+                                <img src="@item.Product?.ImageUrl" alt="" class="w-100 h-100 rounded-3 shadow-sm" 
+                                     style="object-fit: cover;" onerror="this.src='/img/no-image.png'" />
+                            </div>
+                            <div class="flex-grow-1" style="min-width: 0;">
+                                <div class="d-flex flex-wrap justify-content-between align-items-start mb-1 gap-2">
+                                    <h6 class="fw-bold text-dark mb-0 font-inter" style="overflow-wrap: break-word; word-break: break-word; min-width: 0;">@item.Product?.Name</h6>
+                                    <span class="fw-bold font-outfit text-primary" style="font-size: 1.15rem;">@(((item.Quantity ?? 0) * (item.Price ?? 0)).ToString("N0"))đ</span>
+                                </div>
+                                <div class="text-muted small mb-2">
+                                    <span class="badge bg-light text-dark fw-medium rounded-pill px-2 border me-1">Size: @item.SelectedSize</span>
+                                    <span class="badge bg-light text-dark fw-medium rounded-pill px-2 border">Màu: @item.SelectedColor</span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="extra-small text-muted fw-medium py-1 px-2 bg-light rounded-pill">
+                                        @((item.Price ?? 0).ToString("N0"))đ x @((item.Quantity as int?) ?? 0) sản phẩm
+                                    </div>
+                                    <div class="text-muted extra-small font-inter">Trạng kho: @(item.Product?.Stock ?? 0)</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Order Summary Glass Box -->
+                <div class="p-4 rounded-4" style="background: rgba(99, 102, 241, 0.03); border: 1px dashed rgba(99, 102, 241, 0.2);">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted font-inter">Tạm tính:</span>
+                         <span class="fw-bold">@(((Model.TotalAmount ?? 0) + (Model.DiscountAmount ?? 0)).ToString("N0"))đ</span>
+                    </div>
+                    @if (Model.DiscountAmount > 0)
+                    {
+                        <div class="d-flex justify-content-between mb-2 text-danger">
+                            <span class="font-inter">Giảm giá (@Model.CouponCode):</span>
+                              <span class="fw-bold">-@((Model.DiscountAmount ?? 0).ToString("N0"))đ</span>
+                        </div>
+                    }
+                    <hr class="my-3 opacity-10">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="h5 fw-bold mb-0 text-dark">Tổng cộng:</span>
+                            <div class="text-muted extra-small font-inter">@Model.PaymentMethod • @Model.PaymentStatus</div>
+                        </div>
+                        <span class="h3 fw-bold mb-0 text-primary font-outfit">@((Model.TotalAmount ?? 0).ToString("N0"))đ</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 opacity-25">
+                    <i class="fas fa-inbox fa-4x mb-3"></i>
+                    <p class="fw-bold">Không có sản phẩm nào trong đơn hàng.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .extra-small { font-size: 0.75rem; }
+    .badge-soft-danger { background: #fef2f2; color: #dc2626; }
+    .transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .hover-shadow:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+    .admin-order-item-card { border: 1.5px solid #f3f4f6; }
+</style>

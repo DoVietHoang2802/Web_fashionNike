@@ -1,0 +1,213 @@
+@model List<web1.Models.WishlistItem>
+@{
+    ViewData["Title"] = "Yêu thích";
+    var items = Model;
+}
+
+<!-- ─── Hero Header ─────────────────────────────────────────────── -->
+<section class="wishlist-hero">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <p class="text-uppercase text-muted mb-1" style="font-size: 0.75rem; letter-spacing: 2px; font-weight: 600;">
+                    <i class="far fa-heart me-1"></i> My Wishlist
+                </p>
+                <h1 class="wishlist-title mb-1">Sản phẩm yêu thích</h1>
+                <p class="text-muted mb-0" style="font-size: 0.9rem;">@items.Count sản phẩm đã lưu</p>
+            </div>
+            @if (items.Any())
+            {
+                <a asp-controller="Products" asp-action="Index"
+                   class="btn btn-dark rounded-pill px-4 py-2 fw-semibold btn-continue">
+                    <i class="fas fa-plus me-2"></i>Thêm sản phẩm
+                </a>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ─── Empty State ─────────────────────────────────────────────── -->
+@if (!items.Any())
+{
+    <div class="wishlist-empty">
+        <div class="container">
+            <div class="empty-content">
+                <div class="empty-icon">
+                    <i class="far fa-heart"></i>
+                </div>
+                <h3 class="empty-title">Chưa có sản phẩm yêu thích</h3>
+                <p class="empty-desc">Lưu lại những sản phẩm bạn thích để mua sắm dễ dàng hơn.</p>
+                <a asp-controller="Products" asp-action="Index"
+                   class="btn btn-dark rounded-pill px-5 py-2 fw-semibold mt-3">
+                    <i class="fas fa-bag-shopping me-2"></i>Khám phá ngay
+                </a>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- ─── Product Grid ─────────────────────────────────────────── -->
+    <section class="wishlist-grid-section">
+        <div class="container">
+            <div class="wishlist-grid">
+
+                @foreach (var item in items)
+                {
+                    var product = item.Product;
+                    if (product == null) continue;
+
+                    <div class="wishlist-card" id="wishlist-card-@product.Id">
+                        <!-- Image -->
+                        <div class="wishlist-card__image">
+                            <a asp-controller="Products" asp-action="Details" asp-route-id="@product.Id">
+                                <img src="@product.ImageUrl" alt="@product.Name"
+                                     onerror="this.src='https://placehold.co/400x400/f5f5f5/999?text=No+Image'">
+                            </a>
+                            <!-- Wishlist badge -->
+                            <span class="wishlist-badge">
+                                <i class="fas fa-heart"></i>
+                            </span>
+                            <!-- Remove button -->
+                            <button class="wishlist-remove-btn"
+                                    onclick="removeFromWishlist(@product.Id, @product.Id)"
+                                    title="Xóa khỏi yêu thích">
+                                <i class="fas fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="wishlist-card__content">
+                            <!-- Category -->
+                            <span class="wishlist-category">
+                                @((product.Category?.Name) ?? "Nike")
+                            </span>
+
+                            <!-- Name -->
+                            <a asp-controller="Products" asp-action="Details" asp-route-id="@product.Id"
+                               class="wishlist-name">
+                                @product.Name
+                            </a>
+
+                            <!-- Rating -->
+                            <div class="wishlist-rating">
+                                @{
+                                    int rv = (int)Math.Round((double)(product.Rating ?? 0));
+                                    string rs = (product.Rating ?? 0m).ToString("F1");
+                                }
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <i class="fas fa-star @((i <= rv) ? "active" : "inactive")"></i>
+                                }
+                                <span class="rating-text">@rs</span>
+                                <span class="rating-count">(@(product.ReviewCount ?? 0) đánh giá)</span>
+                            </div>
+
+                            <!-- Meta -->
+                            <div class="wishlist-meta">
+                                @if ((product.Stock ?? 0) > 0)
+                                {
+                                    <span class="meta-instock">
+                                        <i class="fas fa-circle-check me-1"></i>Còn hàng
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="meta-outstock">
+                                        <i class="fas fa-circle-xmark me-1"></i>Hết hàng
+                                    </span>
+                                }
+                                <span class="meta-sold">
+                                    <i class="fas fa-fire me-1"></i>@(product.SoldCount ?? 0) đã bán
+                                </span>
+                            </div>
+
+                            <!-- Price & Action -->
+                            <div class="wishlist-card__footer">
+                                <div class="wishlist-price">
+                                    @((product.Price ?? 0).ToString("N0"))đ
+                                </div>
+                                <button class="btn-add-cart @(product.Stock <= 0 ? "disabled" : "")"
+                                        data-product-id="@product.Id"
+                                        onclick="event.stopPropagation(); addToCartFromWishlist(@product.Id)">
+                                    <i class="fas fa-bag-shopping me-2"></i>
+                                    @(product.Stock > 0 ? "Thêm vào giỏ" : "Hết hàng")
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </section>
+}
+
+<!-- ─── Toast Notification ──────────────────────────────────────── -->
+<div class="toast-container" id="toastContainer"></div>
+
+@section Scripts {
+    <script>
+        // ── Remove from wishlist ───────────────────────────────────
+        function removeFromWishlist(productId, cardId) {
+            $.ajax({
+                url: '@Url.Action("ToggleWishlist", "Products")',
+                type: 'POST',
+                data: { productId: productId },
+                success: function(res) {
+                    if (res.success) {
+                        var card = document.getElementById('wishlist-card-' + cardId);
+                        if (card) {
+                            card.style.transition = 'opacity 0.4s, transform 0.4s';
+                            card.style.opacity = '0';
+                            card.style.transform = 'scale(0.92)';
+                            setTimeout(function() { location.reload(); }, 400);
+                        } else {
+                            location.reload();
+                        }
+                    }
+                },
+                error: function() {
+                    showToast('Đã xảy ra lỗi. Vui lòng thử lại.', 'error');
+                }
+            });
+        }
+
+        // ── Add to cart from wishlist ─────────────────────────────
+        function addToCartFromWishlist(productId) {
+            $.ajax({
+                url: '@Url.Action("AddToCart", "Cart")',
+                type: 'POST',
+                data: { productId: productId, quantity: 1 },
+                success: function(res) {
+                    if (res.success) {
+                        var badge = document.getElementById('cart-count');
+                        if (badge) {
+                            badge.textContent = res.cartCount;
+                            badge.classList.toggle('d-none', res.cartCount === 0);
+                        }
+                        showToast(res.message, 'success');
+                    } else {
+                        showToast(res.message, 'error');
+                    }
+                },
+                error: function() {
+                    showToast('Đã xảy ra lỗi khi thêm vào giỏ.', 'error');
+                }
+            });
+        }
+
+        // ── Simple toast ───────────────────────────────────────────
+        function showToast(message, type) {
+            var container = document.getElementById('toastContainer');
+            var toast = document.createElement('div');
+            toast.className = 'wishlist-toast wishlist-toast-' + type;
+            toast.innerHTML = '<i class="fas ' + (type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation') + ' me-2"></i>' + message;
+            container.appendChild(toast);
+            setTimeout(function() {
+                toast.classList.add('hide');
+                setTimeout(function() { toast.remove(); }, 400);
+            }, 2500);
+        }
+    </script>
+}

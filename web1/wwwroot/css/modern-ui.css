@@ -1,0 +1,725 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@100;300;400;500;600;700;800;900&display=swap');
+
+:root {
+    --nike-black: #000000;
+    --nike-white: #ffffff;
+    --nike-gray-light: #f5f5f5;
+    --nike-gray-medium: #757575;
+    --nike-gray-dark: #111111;
+    --font-primary: 'Be Vietnam Pro', sans-serif;
+    --font-heading: 'Be Vietnam Pro', sans-serif;
+    --transition-standard: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+    font-family: var(--font-primary);
+    background-color: var(--nike-white);
+    color: var(--nike-black);
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin-bottom: 1rem;
+    text-transform: none;
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+h5 { font-size: 1rem; }
+h6 { font-size: 0.9rem; }
+
+/* Buttons */
+.btn-nike {
+    background-color: var(--nike-black);
+    color: var(--nike-white);
+    border: none;
+    border-radius: 30px;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: none;
+    transition: var(--transition-standard);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.btn-nike:hover {
+    background-color: var(--nike-gray-medium);
+    color: var(--nike-white);
+}
+
+.btn-nike-outline {
+    background-color: transparent;
+    color: var(--nike-black);
+    border: 1.5px solid #e5e5e5;
+    border-radius: 30px;
+    padding: 10px 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: var(--transition-standard);
+    text-decoration: none;
+}
+
+.btn-nike-outline:hover {
+    border-color: var(--nike-black);
+    color: var(--nike-black);
+}
+
+/* Navigation */
+.nike-nav {
+    background: var(--nike-white);
+    padding: 14px 0;
+    border-bottom: 1px solid transparent;
+}
+
+.navbar-brand {
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: var(--nike-black) !important;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+}
+
+.nav-link {
+    color: var(--nike-black) !important;
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 8px 14px !important;
+    position: relative;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 14px;
+    right: 14px;
+    height: 2px;
+    background: var(--nike-black);
+    transform: scaleX(0);
+    transition: var(--transition-standard);
+}
+
+.nav-link:hover::after {
+    transform: scaleX(1);
+}
+
+/* Hero Section */
+.hero-nike {
+    background: var(--nike-white);
+    padding: 32px 0;
+    text-align: center;
+}
+
+.hero-nike h1 {
+    font-size: 3rem;
+    line-height: 0.95;
+    margin-bottom: 18px;
+    text-transform: uppercase;
+}
+
+/* Product Cards */
+.nike-product-card {
+    border: none;
+    background: transparent;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.nike-product-image-container {
+    background-color: var(--nike-gray-light);
+    width: 100%;
+    aspect-ratio: 1/1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nike-product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.nike-product-card:hover .nike-product-image {
+    transform: scale(1.05);
+}
+
+.nike-product-info {
+    padding-top: 10px;
+}
+
+.nike-product-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    margin-bottom: 2px;
+    color: var(--nike-black);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.nike-product-category {
+    color: var(--nike-gray-medium);
+    font-size: 0.82rem;
+    margin-bottom: 4px;
+}
+
+.nike-product-price {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--nike-black);
+    margin-top: 4px;
+}
+
+/* NEW: Add-to-cart button overlay (đã khôi phục) */
+.nike-quick-add {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--nike-black);
+    color: var(--nike-white);
+    border: none;
+    padding: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    opacity: 0;
+    transform: translateY(100%);
+    transition: var(--transition-standard);
+}
+
+.nike-product-card:hover .nike-quick-add {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.nike-card-rating {
+    font-size: 0.75rem;
+    color: var(--nike-black);
+    margin-top: 4px;
+}
+
+.nike-card-stock {
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+.stock-low { color: #d9534f; }
+.stock-ok { color: #5cb85c; }
+
+/* Footer */
+.nike-footer {
+    background: var(--nike-black);
+    color: var(--nike-white);
+    padding: 50px 0;
+    font-size: 0.9rem;
+}
+
+.nike-footer a {
+    color: var(--nike-gray-medium);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.nike-footer a:hover {
+    color: var(--nike-white);
+}
+
+.nike-footer h6 {
+    color: var(--nike-white);
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+/* Utilities */
+.text-nike-gray { color: var(--nike-gray-medium); }
+.bg-nike-gray { background-color: var(--nike-gray-light); }
+.border-nike { border: 1px solid #e5e5e5; }
+.rounded-nike { border-radius: 4px; }
+
+/* Layout Scaling Fixes — Premium Feel */
+.nike-display-icon {
+    font-size: 4.5rem;
+    line-height: 1;
+    display: block;
+    margin-bottom: 24px;
+    opacity: 0.2;
+}
+
+.nike-section-title {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    margin-bottom: 2rem;
+}
+
+/* Pagination Styling */
+.pagination .page-link {
+    border: 1px solid #e5e5e5;
+    color: var(--nike-black);
+    font-weight: 700;
+    padding: 8px 16px;
+    transition: all 0.2s;
+    border-radius: 4px;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--nike-black);
+    border-color: var(--nike-black);
+    color: var(--nike-white);
+}
+
+.pagination .page-link:hover {
+    background-color: var(--nike-gray-light);
+}
+
+/* Premium Checkout Card */
+.nike-checkout-card {
+    background: var(--nike-white);
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid #eeeeee;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    margin-bottom: 24px;
+}
+
+.nike-checkout-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Payment Method Cards */
+.nike-payment-option {
+    border: 1.5px solid #eee;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: var(--transition-standard);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nike-payment-option:hover {
+    border-color: #ddd;
+    background-color: #fafafa;
+}
+
+.nike-payment-option.active {
+    border-color: var(--nike-black);
+    background-color: #fff;
+}
+
+.nike-payment-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.nike-payment-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--nike-gray-medium);
+}
+
+.nike-payment-option.active .nike-payment-icon {
+    color: var(--nike-black);
+}
+
+@media (max-width: 768px) {
+    .nike-section-title { font-size: 1.25rem; }
+    .nike-display-icon { font-size: 3rem; }
+    .nike-checkout-card { padding: 16px; }
+}
+
+/* ================================================================
+   WISHLIST PAGE — Premium Luxury Design
+   ================================================================ */
+
+/* ── Hero Header ─────────────────────────────────────────────── */
+.wishlist-hero {
+    background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
+    border-bottom: 1px solid #eee;
+    padding: 40px 0 32px;
+}
+
+.wishlist-title {
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: #111;
+    text-transform: uppercase;
+}
+
+.btn-continue {
+    font-size: 0.85rem;
+    padding: 10px 20px;
+}
+
+/* ── Empty State ─────────────────────────────────────────────── */
+.wishlist-empty {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+}
+
+.empty-content {
+    text-align: center;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 28px;
+}
+
+.empty-icon i {
+    font-size: 2.5rem;
+    color: #ccc;
+}
+
+.empty-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 10px;
+}
+
+.empty-desc {
+    color: #888;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* ── Product Grid ───────────────────────────────────────────── */
+.wishlist-grid-section {
+    padding: 48px 0 80px;
+    background: #fff;
+}
+
+.wishlist-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+/* ── Wishlist Card ─────────────────────────────────────────── */
+.wishlist-card {
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+    transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+}
+
+.wishlist-card:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+    transform: translateY(-4px);
+    border-color: #e0e0e0;
+}
+
+/* Image area */
+.wishlist-card__image {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    background: #f7f7f7;
+}
+
+.wishlist-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    display: block;
+}
+
+.wishlist-card:hover .wishlist-card__image img {
+    transform: scale(1.04);
+}
+
+/* Wishlist heart badge */
+.wishlist-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wishlist-badge i {
+    font-size: 0.75rem;
+    color: #e74c3c;
+}
+
+/* Remove button */
+.wishlist-remove-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.25s, transform 0.25s, background 0.2s;
+    backdrop-filter: blur(4px);
+}
+
+.wishlist-card:hover .wishlist-remove-btn {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.wishlist-remove-btn:hover {
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.wishlist-remove-btn i {
+    font-size: 0.7rem;
+    color: #555;
+}
+
+.wishlist-remove-btn:hover i {
+    color: #e74c3c;
+}
+
+/* Card content */
+.wishlist-card__content {
+    padding: 16px 18px 18px;
+}
+
+.wishlist-category {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #aaa;
+    margin-bottom: 6px;
+}
+
+.wishlist-name {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111;
+    text-decoration: none;
+    line-height: 1.4;
+    margin-bottom: 10px;
+    min-height: 2.8em;
+    transition: color 0.2s;
+}
+
+.wishlist-name:hover {
+    color: #555;
+}
+
+/* Rating */
+.wishlist-rating {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-bottom: 10px;
+}
+
+.wishlist-rating i {
+    font-size: 0.7rem;
+}
+
+.wishlist-rating i.active { color: #f5a623; }
+.wishlist-rating i.inactive { color: #ddd; }
+
+.rating-text {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #111;
+    margin-left: 5px;
+}
+
+.rating-count {
+    font-size: 0.75rem;
+    color: #aaa;
+    margin-left: 4px;
+}
+
+/* Meta */
+.wishlist-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.wishlist-meta span {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #888;
+}
+
+.meta-instock { color: #27ae60 !important; }
+.meta-outstock { color: #e74c3c !important; }
+.meta-sold { color: #f39c12 !important; }
+
+/* Card footer */
+.wishlist-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.wishlist-price {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #111;
+    letter-spacing: -0.02em;
+}
+
+.btn-add-cart {
+    flex-shrink: 0;
+    background: #111;
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 8px 16px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    white-space: nowrap;
+}
+
+.btn-add-cart:hover {
+    background: #333;
+    transform: scale(1.03);
+}
+
+.btn-add-cart.disabled {
+    background: #ddd;
+    color: #999;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ── Toast Notification ─────────────────────────────────────── */
+.toast-container {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.wishlist-toast {
+    background: #111;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    animation: toastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    display: flex;
+    align-items: center;
+}
+
+.wishlist-toast-success { background: #27ae60; }
+.wishlist-toast-error { background: #e74c3c; }
+
+.wishlist-toast.hide {
+    animation: toastOut 0.35s ease forwards;
+}
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.9); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toastOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(12px) scale(0.95); }
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+    .wishlist-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .wishlist-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+    }
+    .wishlist-hero { padding: 28px 0 24px; }
+    .wishlist-remove-btn { opacity: 1; transform: scale(1); }
+    .btn-continue { width: 100%; justify-content: center; }
+    .toast-container { bottom: 20px; right: 20px; left: 20px; }
+}
+
+@media (max-width: 480px) {
+    .wishlist-grid {
+        grid-template-columns: 1fr;
+    }
+}
