@@ -1,0 +1,92 @@
+@model web1.Models.ProductVariant
+@{
+    ViewData["Title"] = "Thêm biến thể";
+    var product = ViewBag.Product as web1.Models.Product;
+}
+
+<div class="container py-4" style="max-width: 600px;">
+    <h4 class="fw-bold mb-1">Thêm biến thể mới</h4>
+    <p class="text-muted small mb-3">
+        Sản phẩm: <strong>@product?.Name</strong> — Giá gốc: <strong>@((product?.Price ?? 0).ToString("N0"))đ</strong>
+    </p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post">
+                @Html.AntiForgeryToken()
+
+                <!-- Size -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Size <span class="text-danger">*</span></label>
+                    <input type="text" name="Size" class="form-control"
+                           placeholder="VD: S, M, L, XL, 38, 39, 40..."
+                           value="@Model?.Size" required>
+                    <div class="form-text small text-muted">
+                        Nhập size giày (38-45) hoặc size áo quần (S-XXL)
+                    </div>
+                </div>
+
+                <!-- Color -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Màu sắc <span class="text-danger">*</span></label>
+                    <input type="text" name="Color" class="form-control"
+                           placeholder="VD: Đen, Trắng, Xanh Navy, Đỏ..."
+                           value="@Model?.Color" required>
+                </div>
+
+                <!-- Stock -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tồn kho</label>
+                    <input type="number" name="Stock" class="form-control"
+                           min="0" value="@(Model?.Stock ?? 0)" required>
+                    <div class="form-text small text-muted">
+                        Số lượng sản phẩm biến thể này có sẵn trong kho.
+                    </div>
+                </div>
+
+                <!-- Price Modifier -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Phụ phí</label>
+                    <input type="number" name="PriceModifier" class="form-control"
+                           step="1000" placeholder="VD: 50000 (thêm 50K) hoặc -10000 (giảm 10K)"
+                           value="@(Model?.PriceModifier?.ToString() ?? "")">
+                    <div class="form-text small text-muted">
+                        Để trống hoặc 0 = giá bằng giá gốc (@((product?.Price ?? 0).ToString("N0"))đ).
+                        Số dương = thêm tiền, số âm = giảm tiền.
+                    </div>
+                </div>
+
+                <!-- IsActive -->
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="IsActive" id="IsActive"
+                               value="true" @(Model?.IsActive != false ? "checked" : "")>
+                        <label class="form-check-label" for="IsActive">
+                            <strong>Hoạt động</strong> (bỏ tick để ẩn biến thể này)
+                        </label>
+                    </div>
+                </div>
+
+                @if (ViewData.ModelState.ErrorCount > 0)
+                {
+                    <div class="alert alert-danger py-2 small">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@error.ErrorMessage</div>
+                        }
+                    </div>
+                }
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Lưu biến thể
+                    </button>
+                    <a asp-action="ProductVariants" asp-route-productId="@Model?.ProductId"
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Quay lại
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -10,6 +10,10 @@
 //
 // Keys dùng chung: xem AppConstants.cs
 // ================================================================
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using web1.Data;
+using web1.Models;
 
 // builder: đối tượng chứa toàn bộ cấu hình ứng dụng
 // CreateBuilder() khởi tạo WebApplicationBuilder - đọc config từ appsettings.json
@@ -80,6 +84,7 @@ builder.Services.AddScoped<OrderService>();     // Xử lý đơn hàng
 builder.Services.AddScoped<CouponService>();    // Xử lý mã giảm giá
 builder.Services.AddScoped<CategoryService>();  // Xử lý danh mục (có cache)
 builder.Services.AddScoped<WishlistService>();   // Xử lý wishlist
+builder.Services.AddScoped<ProductVariantService>(); // Xử lý biến thể (Size + Color)
 
 
 // ── Session ──────────────────────────────────────────────────────

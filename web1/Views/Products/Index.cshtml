@@ -21,7 +21,7 @@
                                 <input class="form-check-input" type="radio" name="categoryId" id="cat-all" value="" onchange="this.form.submit()" @(ViewBag.CategoryId == null ? "checked" : "")>
                                 <label class="form-check-label small" for="cat-all">Tất cả sản phẩm</label>
                             </div>
-                            @foreach (var cat in categories)
+                            @foreach (var cat in (categories ?? new List<web1.Models.Category>()))
                             {
                                 <div class="form-check custom-nike-check">
                                     <input class="form-check-input" type="radio" name="categoryId" id="cat-@cat.Id" value="@cat.Id" onchange="this.form.submit()" @(ViewBag.CategoryId == cat.Id ? "checked" : "")>

@@ -253,7 +253,7 @@ namespace web1.Controllers
             decimal   discount    = 0;
             string? appliedCode = null;
             var couponJson = HttpContext.Session.GetString(AppConstants.CouponSessionKey);
-            if (!string.IsNullOrEmpty(cupponJson))
+            if (!string.IsNullOrEmpty(couponJson))
             {
                 var data = JsonSerializer.Deserialize<CouponSessionData>(couponJson);
                 appliedCode = data?.Code;

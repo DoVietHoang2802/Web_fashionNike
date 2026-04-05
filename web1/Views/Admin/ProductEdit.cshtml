@@ -121,6 +121,9 @@
                 <button type="submit" class="btn btn-primary py-2">
                     <i class="fas fa-save me-1"></i> Lưu thay đổi
                 </button>
+                <a href="@Url.Action("ProductVariants", new { productId = Model.Id })" class="btn btn-outline-primary py-2">
+                    <i class="fas fa-boxes-stacked me-1"></i> Quản lý biến thể (Size/Color)
+                </a>
                 <a href="@Url.Action("Products", "Admin")" class="btn btn-secondary py-2">
                     <i class="fas fa-times me-1"></i> Hủy bỏ
                 </a>

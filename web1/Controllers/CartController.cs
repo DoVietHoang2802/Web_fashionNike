@@ -12,6 +12,8 @@
 //   • Khi user đăng nhập / thanh toán -> chuyển thành Order trong DB.
 //   • Image upload xử lý trong AdminController/ProductCreate.
 // ================================================================
+
+
 using Microsoft.AspNetCore.Mvc;
 using web1.Models;
 using System.Text.Json;
@@ -25,13 +27,16 @@ namespace web1.Controllers
     /// </summary>
     public class CartController : Controller
     {
-        // ProductService: dùng để lấy thông tin sản phẩm (tên, giá, tồn kho)
-        // khi thêm vào giỏ hoặc cập nhật số lượng.
+        // ProductService: dùng để lấy thông tin sản phẩm (tên, giá)
         private readonly ProductService _productService;
 
-        public CartController(ProductService productService)
+        // ProductVariantService: kiểm tra tồn kho theo biến thể (Size + Color)
+        private readonly ProductVariantService _variantService;
+
+        public CartController(ProductService productService, ProductVariantService variantService)
         {
             _productService = productService;
+            _variantService = variantService;
         }
 
         // ================================================================
@@ -129,11 +134,11 @@ namespace web1.Controllers
         /// <param name="selectedColor">Màu đã chọn (null nếu không có)</param>
         /// <returns>JSON: { success, message, cartCount }</returns>
         [HttpPost]
-        public IActionResult AddToCart(
+        public async Task<IActionResult> AddToCart(
             int productId, int quantity = 1,
             string? selectedSize = null, string? selectedColor = null)
         {
-            // Bước 1: Lấy sản phẩm từ DB để kiểm tra tồn tại + lấy Stock
+            // Bước 1: Lấy sản phẩm từ DB để kiểm tra tồn tại
             var product = _productService.GetProductById(productId);
             if (product == null)
                 return Json(new { success = false, message = "Sản phẩm không tồn tại" });
@@ -142,31 +147,32 @@ namespace web1.Controllers
             var cart = GetCart();
 
             // Bước 3: Tìm xem sản phẩm đã có trong giỏ chưa (cùng Id + Size + Color)
-            // Ví dụ: áo Nike size M màu đen đã có trong giỏ -> cộng thêm số lượng
             var existing = cart.FirstOrDefault(i =>
                 i.ProductId == productId &&
                 i.SelectedSize == selectedSize &&
                 i.SelectedColor == selectedColor);
 
-            // Lấy số lượng tồn kho tối đa có thể mua
-            int maxQty = product.Stock ?? 0;
+            // Lấy số lượng tồn kho tối đa TỪ BIẾN THỂ
+            int maxQty = await _variantService.CheckStockAsync(productId, selectedSize ?? "", selectedColor ?? "");
+
+            // Nếu không có biến thể (hệ thống cũ hoặc chưa có biến thể) -> fallback về Product.Stock
+            if (maxQty < 0)
+                maxQty = product.Stock ?? 0;
 
             if (existing != null)
             {
                 // Trường hợp A: Sản phẩm đã có trong giỏ -> cộng dồn số lượng
-                // Kiểm tra không vượt quá tồn kho
                 if (existing.Quantity + quantity > maxQty)
                     return Json(new
                     {
                         success = false,
                         message = $"Chỉ còn {maxQty} sản phẩm trong kho."
                     });
-                existing.Quantity += quantity;  // Cộng thêm số lượng
+                existing.Quantity += quantity;
             }
             else
             {
                 // Trường hợp B: Sản phẩm chưa có trong giỏ -> thêm mới
-                // Kiểm tra số lượng yêu cầu không vượt tồn kho
                 if (quantity > maxQty)
                     return Json(new
                     {
@@ -174,11 +180,10 @@ namespace web1.Controllers
                         message = $"Chỉ còn {maxQty} sản phẩm trong kho."
                     });
 
-                // Tạo CartItem mới với đầy đủ thông tin
                 cart.Add(new CartItem
                 {
                     ProductId     = productId,
-                    Product       = product,  // Lưu cả object Product để hiển thị (tránh query lại)
+                    Product       = product,
                     Quantity      = quantity,
                     SelectedSize  = selectedSize,
                     SelectedColor = selectedColor
@@ -211,13 +216,12 @@ namespace web1.Controllers
         /// <param name="selectedSize">Size để xác định đúng CartItem</param>
         /// <param name="selectedColor">Color để xác định đúng CartItem</param>
         [HttpPost]
-        public IActionResult UpdateQuantity(
+        public async Task<IActionResult> UpdateQuantity(
             int productId, int quantity,
             string? selectedSize = null, string? selectedColor = null)
         {
-            var cart = GetCart();  // Đọc giỏ hàng từ Session
+            var cart = GetCart();
 
-            // Tìm CartItem cần cập nhật (cùng productId + size + color)
             var item = cart.FirstOrDefault(i =>
                 i.ProductId == productId &&
                 i.SelectedSize == selectedSize &&
@@ -230,20 +234,25 @@ namespace web1.Controllers
                     cart.Remove(item);
                 else
                 {
-                    // Kiểm tra không vượt tồn kho trước khi cập nhật
-                    var product = _productService.GetProductById(productId);
-                    if (product != null && quantity > (product.Stock ?? 0))
+                    // Kiểm tra tồn kho TỪ BIẾN THỂ
+                    int maxQty = await _variantService.CheckStockAsync(productId, selectedSize ?? "", selectedColor ?? "");
+                    if (maxQty < 0)
+                    {
+                        var product = _productService.GetProductById(productId);
+                        maxQty = product?.Stock ?? 0;
+                    }
+
+                    if (quantity > maxQty)
                         return Json(new
                         {
                             success = false,
-                            message = $"Chỉ còn {product.Stock} sản phẩm trong kho."
+                            message = $"Chỉ còn {maxQty} sản phẩm trong kho."
                         });
-                    item.Quantity = quantity;  // Cập nhật số lượng mới
+                    item.Quantity = quantity;
                 }
-                SaveCart(cart);  // Lưu lại Session sau khi thay đổi
+                SaveCart(cart);
             }
 
-            // Trả về tổng số lượng giỏ hàng (để AJAX cập nhật UI)
             return Json(new { success = true, cartCount = cart.Sum(i => i.Quantity) });
         }
 

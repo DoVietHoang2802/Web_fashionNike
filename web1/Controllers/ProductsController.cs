@@ -35,6 +35,9 @@ namespace web1.Controllers
         // UserManager: lấy user hiện tại để kiểm tra wishlist status
         private readonly UserManager<ApplicationUser> _userManager;
 
+        // ProductVariantService: lấy biến thể (Size + Color) để hiển thị
+        private readonly ProductVariantService _variantService;
+
         // ================================================================
         // CONSTRUCTOR - Tiêm dependency
         // ================================================================
@@ -42,12 +45,14 @@ namespace web1.Controllers
             ProductService          productService,
             CategoryService         categoryService,
             WishlistService         wishlistService,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            ProductVariantService    variantService)
         {
             _productService   = productService;
             _categoryService  = categoryService;
             _wishlistService = wishlistService;
             _userManager     = userManager;
+            _variantService  = variantService;
         }
 
         // ================================================================
@@ -135,6 +140,11 @@ namespace web1.Controllers
             // ── Đánh giá sản phẩm (danh sách review từ khách hàng)
             var reviews = await _productService.GetReviewsByProductIdAsync(id);
 
+            // ── Biến thể sản phẩm (Size + Color)
+            var variants = await _variantService.GetByProductIdAsync(id);
+            var availableSizes = await _variantService.GetAvailableSizesAsync(id);
+            var availableColors = await _variantService.GetAllAvailableColorsAsync(id);
+
             // ── Kiểm tra wishlist status (chỉ khi đã đăng nhập)
             // Nếu chưa đăng nhập -> mặc định không trong wishlist
             bool isInWishlist = false;
@@ -146,6 +156,9 @@ namespace web1.Controllers
             ViewBag.RelatedProducts = relatedProducts;
             ViewBag.Reviews         = reviews;
             ViewBag.IsInWishlist    = isInWishlist;
+            ViewBag.Variants        = variants;
+            ViewBag.AvailableSizes  = availableSizes;
+            ViewBag.AvailableColors = availableColors;
 
             return View(product);
         }

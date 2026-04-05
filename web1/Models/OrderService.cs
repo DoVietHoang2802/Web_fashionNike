@@ -17,10 +17,12 @@ namespace web1.Models
     public class OrderService
     {
         private readonly ApplicationDbContext _context;
+        private readonly ProductVariantService _variantService;
 
-        public OrderService(ApplicationDbContext context)
+        public OrderService(ApplicationDbContext context, ProductVariantService variantService)
         {
             _context = context;
+            _variantService = variantService;
         }
 
         // ================================================================
@@ -30,6 +32,9 @@ namespace web1.Models
         /// <summary>
         /// Tạo đơn hàng + giảm tồn kho + tăng SoldCount.
         /// Dùng Transaction để đảm bảo tính nhất quán — nếu lỗi thì Rollback.
+        ///
+        /// Tồn kho được giảm theo BIẾN THỂ (Size + Color) nếu có trong ProductVariant.
+        /// Nếu không có biến thể -> fallback giảm Product.Stock như cũ.
         /// </summary>
         public async Task<Order> CreateOrderAsync(Order order)
         {
@@ -45,22 +50,55 @@ namespace web1.Models
 
                     var productInfo = await _context.Products
                         .Where(p => p.Id == item.ProductId)
-                        .Select(p => new { p.Name, p.Stock })
+                        .Select(p => new { p.Name })
                         .FirstOrDefaultAsync();
 
-                    if (productInfo != null && (productInfo.Stock ?? 0) < item.Quantity.Value)
+                    if (productInfo == null) continue;
+
+                    // ── Giảm tồn kho theo BIẾN THỂ ──
+                    var size = item.SelectedSize ?? "";
+                    var color = item.SelectedColor ?? "";
+
+                    if (!string.IsNullOrEmpty(size) || !string.IsNullOrEmpty(color))
                     {
-                        throw new InvalidOperationException(
-                            $"Sản phẩm {productInfo.Name} không đủ tồn kho " +
-                            $"(Còn {productInfo.Stock}, yêu cầu {item.Quantity})");
+                        // Thử giảm tồn kho biến thể trước
+                        var variantDecreaseOk = await _variantService.DecreaseStockAsync(
+                            item.ProductId.Value, size, color, item.Quantity.Value);
+
+                        if (!variantDecreaseOk)
+                        {
+                            // Biến thể không đủ tồn kho
+                            var variant = await _variantService.GetBySizeColorAsync(
+                                item.ProductId.Value, size, color);
+                            throw new InvalidOperationException(
+                                $"Sản phẩm {productInfo.Name} (Size: {size}, Màu: {color}) không đủ tồn kho.");
+                        }
+                    }
+                    else
+                    {
+                        // Không có Size/Color -> fallback giảm Product.Stock
+                        var currentStock = await _context.Products
+                            .Where(p => p.Id == item.ProductId)
+                            .Select(p => p.Stock)
+                            .FirstOrDefaultAsync();
+
+                        if ((currentStock ?? 0) < item.Quantity.Value)
+                        {
+                            throw new InvalidOperationException(
+                                $"Sản phẩm {productInfo.Name} không đủ tồn kho " +
+                                $"(Còn {currentStock}, yêu cầu {item.Quantity})");
+                        }
+
+                        await _context.Products
+                            .Where(p => p.Id == item.ProductId)
+                            .ExecuteUpdateAsync(s => s
+                                .SetProperty(p => p.Stock, p2 => (p2.Stock ?? 0) - item.Quantity.Value));
                     }
 
-                    // Cập nhật tồn kho trực tiếp (ExecuteUpdate — không load entity)
-                    // Dùng p2 trong lambda SetProperty để tránh shadow biến p từ Where
+                    // Tăng SoldCount (vẫn trên Product, không cần theo biến thể)
                     await _context.Products
                         .Where(p => p.Id == item.ProductId)
                         .ExecuteUpdateAsync(s => s
-                            .SetProperty(p => p.Stock, p2 => (p2.Stock    ?? 0) - item.Quantity.Value)
                             .SetProperty(p => p.SoldCount, p2 => (p2.SoldCount ?? 0) + item.Quantity.Value));
                 }
 
@@ -165,7 +203,7 @@ namespace web1.Models
                 {
                     o.Status,
                     Items = o.OrderItems!
-                        .Select(oi => new { oi.ProductId, oi.Quantity })
+                        .Select(oi => new { oi.ProductId, oi.Quantity, oi.SelectedSize, oi.SelectedColor })
                         .ToList()
                 })
                 .FirstOrDefaultAsync();
@@ -198,10 +236,14 @@ namespace web1.Models
                 {
                     if (!item.ProductId.HasValue || !item.Quantity.HasValue) continue;
 
+                    // Hoàn tồn kho theo biến thể trước
+                    await _variantService.IncreaseStockAsync(
+                        item.ProductId.Value, item.SelectedSize ?? "", item.SelectedColor ?? "", item.Quantity.Value);
+
+                    // Giảm SoldCount
                     await _context.Products
                         .Where(p => p.Id == item.ProductId)
                         .ExecuteUpdateAsync(s => s
-                            .SetProperty(p => p.Stock, p2 => (p2.Stock ?? 0) + item.Quantity.Value)
                             .SetProperty(p => p.SoldCount, p2 =>
                                 (p2.SoldCount ?? 0) - item.Quantity.Value < 0
                                     ? 0
@@ -216,10 +258,9 @@ namespace web1.Models
                 {
                     if (!item.ProductId.HasValue || !item.Quantity.HasValue) continue;
 
-                    await _context.Products
-                        .Where(p => p.Id == item.ProductId)
-                        .ExecuteUpdateAsync(s => s
-                            .SetProperty(p => p.Stock, p => (p.Stock ?? 0) - item.Quantity.Value));
+                    // Giảm tồn kho theo biến thể
+                    await _variantService.DecreaseStockAsync(
+                        item.ProductId.Value, item.SelectedSize ?? "", item.SelectedColor ?? "", item.Quantity.Value);
                 }
             }
 

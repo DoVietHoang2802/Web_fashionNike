@@ -31,9 +31,12 @@ namespace web1.Controllers
         // ================================================================
         // CONSTRUCTOR - Tiêm dependency
         // ================================================================
-        public HomeController(ILogger<HomeController> logger, ProductService productService, CategoryService categoryService)
+        public HomeController(
+            ILogger<HomeController> logger,
+            ProductService productService,
+            CategoryService categoryService)
         {
-            _logger = _logger;
+            _logger = logger;
             _productService = productService;
             _categoryService = categoryService;
         }

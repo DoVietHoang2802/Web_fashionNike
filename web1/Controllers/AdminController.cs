@@ -49,6 +49,9 @@ namespace web1.Controllers
         // IWebHostEnvironment: truy cập thư mục gốc web (wwwroot) để lưu file upload
         private readonly IWebHostEnvironment _env;
 
+        // ProductVariantService: xử lý biến thể (Size + Color)
+        private readonly ProductVariantService _variantService;
+
         // ================================================================
         // CONSTRUCTOR - Tiêm tất cả dependency cần thiết
         // ================================================================
@@ -59,7 +62,8 @@ namespace web1.Controllers
             CouponService                 couponService,
             CategoryService               categoryService,
             UserManager<ApplicationUser>   userManager,
-            IWebHostEnvironment           env)
+            IWebHostEnvironment           env,
+            ProductVariantService          variantService)
         {
             _context          = context;
             _productService   = productService;
@@ -68,6 +72,7 @@ namespace web1.Controllers
             _categoryService  = categoryService;
             _userManager      = userManager;
             _env              = env;
+            _variantService   = variantService;
         }
 
         // ================================================================
@@ -292,6 +297,134 @@ namespace web1.Controllers
             await _productService.DeleteProductAsync(id);
             TempData["Success"] = "Xóa sản phẩm thành công!";
             return RedirectToAction(nameof(Products));
+        }
+
+        // ================================================================
+        // PRODUCT VARIANTS - Quản lý biến thể (Size + Color)
+        // ================================================================
+
+        /// <summary>
+        /// GET: /Admin/ProductVariants/{productId}
+        /// Danh sách biến thể của một sản phẩm.
+        /// Kèm thông tin sản phẩm cha.
+        /// </summary>
+        public async Task<IActionResult> ProductVariants(int productId)
+        {
+            var product = await _productService.GetProductByIdAsync(productId);
+            if (product == null) return NotFound();
+
+            var variants = await _variantService.GetByProductIdAsync(productId);
+
+            ViewBag.Product = product;
+            ViewBag.ProductId = productId;
+
+            return View(variants);
+        }
+
+        /// <summary>
+        /// GET: /Admin/ProductVariantCreate/{productId}
+        /// Form thêm biến thể mới cho sản phẩm.
+        /// </summary>
+        public async Task<IActionResult> ProductVariantCreate(int productId)
+        {
+            var product = await _productService.GetProductByIdAsync(productId);
+            if (product == null) return NotFound();
+
+            ViewBag.Product = product;
+            ViewBag.ProductId = productId;
+
+            return View(new ProductVariant { ProductId = productId });
+        }
+
+        /// <summary>
+        /// POST: /Admin/ProductVariantCreate
+        /// Tạo biến thể mới.
+        /// Validate: Size + Color không trùng với biến thể đã có.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ProductVariantCreate(ProductVariant variant)
+        {
+            if (string.IsNullOrWhiteSpace(variant.Size) || string.IsNullOrWhiteSpace(variant.Color))
+            {
+                ModelState.AddModelError("", "Size và Màu sắc không được để trống.");
+                var product = await _productService.GetProductByIdAsync(variant.ProductId);
+                ViewBag.Product = product;
+                ViewBag.ProductId = variant.ProductId;
+                return View(variant);
+            }
+
+            // Kiểm tra trùng Size + Color
+            var existing = await _variantService.GetBySizeColorAsync(variant.ProductId, variant.Size, variant.Color);
+            if (existing != null)
+            {
+                ModelState.AddModelError("", $"Biến thể Size '{variant.Size}' - Màu '{variant.Color}' đã tồn tại.");
+                var product = await _productService.GetProductByIdAsync(variant.ProductId);
+                ViewBag.Product = product;
+                ViewBag.ProductId = variant.ProductId;
+                return View(variant);
+            }
+
+            await _variantService.CreateAsync(variant);
+            TempData["Success"] = "Thêm biến thể thành công!";
+            return RedirectToAction(nameof(ProductVariants), new { productId = variant.ProductId });
+        }
+
+        /// <summary>
+        /// GET: /Admin/ProductVariantEdit/{id}
+        /// Form chỉnh sửa biến thể.
+        /// </summary>
+        public async Task<IActionResult> ProductVariantEdit(int id)
+        {
+            var variant = await _variantService.GetByIdAsync(id);
+            if (variant == null) return NotFound();
+
+            return View(variant);
+        }
+
+        /// <summary>
+        /// POST: /Admin/ProductVariantEdit
+        /// Cập nhật biến thể.
+        /// Validate: Size + Color không trùng với biến thể KHÁC cùng sản phẩm.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ProductVariantEdit(ProductVariant variant)
+        {
+            if (string.IsNullOrWhiteSpace(variant.Size) || string.IsNullOrWhiteSpace(variant.Color))
+            {
+                ModelState.AddModelError("", "Size và Màu sắc không được để trống.");
+                return View(variant);
+            }
+
+            // Kiểm tra trùng: có biến thể khác cùng Size+Color trong cùng sản phẩm không?
+            var existing = await _variantService.GetBySizeColorAsync(variant.ProductId, variant.Size, variant.Color);
+            if (existing != null && existing.Id != variant.Id)
+            {
+                ModelState.AddModelError("", $"Biến thể Size '{variant.Size}' - Màu '{variant.Color}' đã tồn tại.");
+                return View(variant);
+            }
+
+            await _variantService.UpdateAsync(variant);
+            TempData["Success"] = "Cập nhật biến thể thành công!";
+            return RedirectToAction(nameof(ProductVariants), new { productId = variant.ProductId });
+        }
+
+        /// <summary>
+        /// POST: /Admin/ProductVariantDelete/{id}
+        /// Xóa biến thể.
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> ProductVariantDelete(int id)
+        {
+            var variant = await _variantService.GetByIdAsync(id);
+            if (variant == null) return NotFound();
+
+            var productId = variant.ProductId;
+            await _variantService.DeleteAsync(id);
+
+            TempData["Success"] = "Xóa biến thể thành công!";
+            return RedirectToAction(nameof(ProductVariants), new { productId });
         }
 
         // ================================================================

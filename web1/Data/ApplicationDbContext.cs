@@ -18,6 +18,7 @@
                 public DbSet<Category> Categories { get; set; }
                 public DbSet<Review> Reviews { get; set; }
                 public DbSet<WishlistItem> WishlistItems { get; set; }
+                public DbSet<ProductVariant> ProductVariants { get; set; }
 
                 protected override void OnModelCreating(ModelBuilder modelBuilder)
                 {
@@ -174,6 +175,33 @@
 
                         // Unique: mỗi user chỉ wishlist 1 sản phẩm 1 lần
                         entity.HasIndex(e => new { e.UserId, e.ProductId }).IsUnique();
+                    });
+
+                    // ================================================================
+                    // Cấu hình ProductVariant
+                    // ================================================================
+                    modelBuilder.Entity<ProductVariant>(entity =>
+                    {
+                        entity.HasKey(e => e.Id);
+                        entity.ToTable("ProductVariants");
+
+                        // Cấu hình các cột
+                        entity.Property(e => e.Size).HasMaxLength(50).IsRequired();
+                        entity.Property(e => e.Color).HasMaxLength(100).IsRequired();
+                        entity.Property(e => e.Stock).HasDefaultValue(0);
+                        entity.Property(e => e.PriceModifier).HasColumnType("decimal(18,2)");
+                        entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+                        // Relationship: ProductVariant → Product (N:1)
+                        entity.HasOne(e => e.Product)
+                              .WithMany()
+                              .HasForeignKey(e => e.ProductId)
+                              .OnDelete(DeleteBehavior.Cascade);  // xóa biến thể khi xóa sản phẩm
+
+                        // Indexes
+                        entity.HasIndex(e => e.ProductId);
+                        // Unique: mỗi sản phẩm không có 2 biến thể trùng Size + Color
+                        entity.HasIndex(e => new { e.ProductId, e.Size, e.Color }).IsUnique();
                     });
                 }
             }
